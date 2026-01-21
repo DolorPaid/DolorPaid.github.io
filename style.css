@@ -1,0 +1,16 @@
+*{
+    background: black;
+    color: white;
+
+    font-size: 75px;
+    font-family: cursive;
+
+    user-select: none;
+}
+
+body{
+    display: flex;
+    height: 90vh;
+    justify-content: center;
+    align-items: center;
+}
