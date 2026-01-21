@@ -5,7 +5,7 @@ async function getData() {
     try {
         const response = await fetch(`${API_URL}/api/data`);
         const data = await response.json();
-        console.log(data);
+        return data
         // ... обновите интерфейс
     } catch (error) {
         console.error('Ошибка при запросе к API:', error);
@@ -78,5 +78,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 
 function GoTo(link){
+    console.log(link, data)
     window.open(link, '_blank')
 }
