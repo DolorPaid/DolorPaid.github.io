@@ -1,16 +1,10 @@
-*{
+* {
     background: black;
     color: white;
 
-    font-size: 75px;
     font-family: cursive;
 
     user-select: none;
+    transition: 0.5s all;
 }
 
-body{
-    display: flex;
-    height: 90vh;
-    justify-content: center;
-    align-items: center;
-}
