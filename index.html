@@ -11,36 +11,9 @@
 <body>
     <section id="container">
     </section>
-    <script>
-        const body = document.querySelector('body')
-
-
-        function StartScreen() {
-            const hello_world = document.createElement('div')
-            hello_world.style = `
-                display: flex;
-                opacity: 0;
-                height: 90vh;
-                font-size: 75px;
-                justify-content: center;
-                align-items: center;
-    `
-
-            hello_world.innerHTML = 'Hello, World!'
-
-            body.prepend(hello_world)
-
-            setTimeout(() => {
-                hello_world.style.opacity = 1
-            }, 500);
-        }
-
-        document.addEventListener('DOMContentLoaded', async () => {
-            StartScreen()
-        })
-    </script>
     <script src="script.js">
     </script>
 </body>
+
 
 </html>
