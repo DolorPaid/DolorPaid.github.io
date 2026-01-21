@@ -16,7 +16,6 @@ async function getData() {
 // Клиентская часть
 const body = document.querySelector('body')
 
-
 function StartScreen() {
     const hello_world = document.createElement('div')
     hello_world.style = `
@@ -78,6 +77,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 
 function GoTo(link){
-    console.log(link, data)
+    console.log(link, getData())
     window.open(link, '_blank')
 }
