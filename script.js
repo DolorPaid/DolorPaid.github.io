@@ -1,3 +1,18 @@
+// Серверная часть
+const API_URL = 'https://dolorpaid-github-io.onrender.com';
+
+async function getData() {
+    try {
+        const response = await fetch(`${API_URL}/api/data`);
+        const data = await response.json();
+        return data
+        // ... обновите интерфейс
+    } catch (error) {
+        console.error('Ошибка при запросе к API:', error);
+    }
+}
+
+
 // Клиентская часть
 const body = document.querySelector('body')
 
@@ -61,6 +76,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 })
 
 
-function GoTo(link){    
+function GoTo(link){
+    alert(getData())
     window.open(link, '_blank')
 }
