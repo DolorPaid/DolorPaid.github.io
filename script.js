@@ -77,7 +77,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 
 function GoTo(link){
-    alert(`Дата: ${getData()}`)
     window.open(link, '_blank')
 }
+
 
