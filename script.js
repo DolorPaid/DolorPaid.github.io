@@ -1,18 +1,3 @@
-// Серверная часть
-const API_URL = 'https://dolorpaid-github-io.onrender.com';
-
-async function getData() {
-    try {
-        const response = await fetch(`${API_URL}/api/data`);
-        const data = await response.json();
-        return data
-        // ... обновите интерфейс
-    } catch (error) {
-        console.error('Ошибка при запросе к API:', error);
-    }
-}
-
-
 // Клиентская часть
 const body = document.querySelector('body')
 
@@ -55,7 +40,7 @@ function StartMain() {
     Cells.forEach(Cell => {
         const cell = document.createElement('cell')
         cell.classList.add('cell')
-        cell.onclick = `GoTo(${Cell[2]})`
+        cell.setAttribute('onclick', `GoTo("${Cell[2]}")`)
         const Title = document.createElement('h2')
         Title.innerHTML = Cell[0]
         const Desc = document.createElement('desc')
@@ -76,7 +61,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 })
 
 
-function GoTo(link){
-    console.log(link, getData())
+function GoTo(link){    
     window.open(link, '_blank')
 }
