@@ -11,6 +11,7 @@ async function GetLinks() {
     }
 }
 
+
 // Клиентская часть
 const body = document.querySelector('body')
 
@@ -42,37 +43,35 @@ function StartScreen() {
 }
 
 
-function StartMain() {
+async function StartMain() {
     const cont = document.querySelector('#container')
 
-    console.log(GetLinks())
-    return
-    const Cells = GetLinks()
+    try {
+        const Cells = await GetLinks()
 
-    Cells.forEach(Cell => {
-        const cell = document.createElement('cell')
-        cell.classList.add('cell')
-        cell.setAttribute('onclick', `GoTo("${Cell[2]}")`)
-        const Title = document.createElement('h2')
-        Title.innerHTML = Cell[0]
-        const Desc = document.createElement('desc')
-        Desc.innerHTML = Cell[1]
+        Cells.forEach(cellData => {
+            const cell = document.createElement('cell')
+            cell.classList.add('cell')
+            cell.addEventListener('click', () => window.open(cellData.url, "_blank"))
+            const Title = document.createElement('h2')
+            Title.textContent = cellData.title
+            const Desc = document.createElement('desc')
+            Desc.textContent = cellData.description
 
-        cell.append(Title, Desc)
-        cont.append(cell)
-    })
+            cell.append(Title, Desc)
+            cont.append(cell)
+        })
 
-    cont.style.display = 'flex'
-    setTimeout(() => {
-        cont.style.opacity = 1
-    }, 10);
+        cont.style.display = 'flex'
+        setTimeout(() => {
+            cont.style.opacity = 1
+        }, 10);
+    } catch (error) {
+        console.error('Ошибка загрузки ссылок: ', error)
+        cont.innerHTML = 'Не удалось загрузить ссылки'
+    }
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
     StartScreen()
 })
-
-function GoTo(link){
-    window.open(link, '_blank')
-
-}
