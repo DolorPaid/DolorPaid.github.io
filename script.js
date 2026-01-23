@@ -1,12 +1,11 @@
 // Серверная часть
 const API_URL = 'https://dolorpaid-github-io.onrender.com';
 
-async function getData() {
+async function GetLinks() {
     try {
-        const response = await fetch(`${API_URL}/api/data`);
+        const response = await fetch(`${API_URL}/api/GetLinks`);
         const data = await response.json();
         return data
-        // ... обновите интерфейс
     } catch (error) {
         console.error('Ошибка при запросе к API:', error);
     }
@@ -47,10 +46,9 @@ function StartScreen() {
 function StartMain() {
     const cont = document.querySelector('#container')
 
-    const Cells = [
-        ['Discord', "Сообщество Автора", 'https://discord.gg/DSWQjTq'],
-        ['Сайт App8ook', "Сайт-Сборник программ, ссылок и информации [by @Ko5ou]", 'https://app8ook.github.io'],
-    ]
+    console.log(GetLinks())
+    return
+    const Cells = GetLinks()
 
     Cells.forEach(Cell => {
         const cell = document.createElement('cell')
@@ -75,9 +73,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     StartScreen()
 })
 
+
 function GoTo(link){
     window.open(link, '_blank')
 }
-
-
-
