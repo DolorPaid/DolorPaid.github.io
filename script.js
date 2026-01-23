@@ -73,7 +73,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     StartScreen()
 })
 
-
 function GoTo(link){
     window.open(link, '_blank')
+
 }
