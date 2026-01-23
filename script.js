@@ -11,7 +11,6 @@ async function GetLinks() {
     }
 }
 
-
 // Клиентская часть
 const body = document.querySelector('body')
 
@@ -73,7 +72,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     StartScreen()
 })
 
-
 function GoTo(link){
     window.open(link, '_blank')
+
 }
