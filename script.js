@@ -1,15 +1,15 @@
-// // Серверная часть
-// const API_URL = 'https://dolorpaid-github-io.onrender.com';
+// Серверная часть
+const API_URL = 'https://dolorpaid-github-io.onrender.com';
 
-// async function GetLinks() {
-//     try {
-//         const response = await fetch(`${API_URL}/api/GetLinks`);
-//         const data = await response.json();
-//         return data.links
-//     } catch (error) {
-//         console.error('Ошибка при запросе к API:', error);
-//     }
-// }
+async function GetLinks() {
+    try {
+        const response = await fetch(`${API_URL}/api/GetLinks`);
+        const data = await response.json();
+        return data.links
+    } catch (error) {
+        console.error('Ошибка при запросе к API:', error);
+    }
+}
 
 
 // Клиентская часть
@@ -47,18 +47,7 @@ async function StartMain() {
     const cont = document.querySelector('#container')
 
     try {
-        const Cells = [
-            {
-                "title": "Discord",
-                "description": "Сообщество Автора",
-                "url": "https://discord.gg/DSWQjTq"
-            },
-            {
-                "title": "Сайт App8ook",
-                "description": "Сайт-Сборник программ, ссылок и информации [by @Ko5ou]",
-                "url": "https://app8ook.github.io"
-            }
-        ]
+        const Cells = await GetLinks()
 
         Cells.forEach(cellData => {
             const cell = document.createElement('cell')
