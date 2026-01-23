@@ -5,7 +5,7 @@ async function GetLinks() {
     try {
         const response = await fetch(`${API_URL}/api/GetLinks`);
         const data = await response.json();
-        return data
+        return data.links
     } catch (error) {
         console.error('Ошибка при запросе к API:', error);
     }
@@ -73,7 +73,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     StartScreen()
 })
 
+
 function GoTo(link){
     window.open(link, '_blank')
-
 }
