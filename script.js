@@ -88,12 +88,9 @@ async function ToLink(url) {
 
         const result = await response.json();
 
-        if (response.ok) {
-            console.log('Успех:', result.message);
-            location.reload();
-        } else {
-            console.error('Ошибка сервера:', result.message);
-        }
+        if (response.ok) console.log('Успех:', result.message);
+        else console.error('Ошибка сервера:', result.message);
+
     } catch (error) {
         console.error('Ошибка сети:', error);
     }
