@@ -52,7 +52,7 @@ async function StartMain() {
         Cells.forEach(cellData => {
             const cell = document.createElement('cell')
             cell.classList.add('cell')
-            cell.addEventListener('click', () => ToLink(cellData.url))
+            cell.addEventListener('click', () => ToLink(`${cellData.url}`))
             const Title = document.createElement('h2')
             Title.textContent = cellData.title
             const Desc = document.createElement('desc')
