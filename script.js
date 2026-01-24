@@ -1,4 +1,3 @@
-// Серверная часть
 const API_URL = 'https://dolorpaid-github-io.onrender.com';
 
 async function GetLinks() {
@@ -11,8 +10,6 @@ async function GetLinks() {
     }
 }
 
-
-// Клиентская часть
 const body = document.querySelector('body')
 
 function StartScreen() {
@@ -41,7 +38,6 @@ function StartScreen() {
         }, 1000);
     }, 500);
 }
-
 
 async function StartMain() {
     const cont = document.querySelector('#container')
@@ -88,9 +84,8 @@ async function ToLink(url) {
 
         const result = await response.json();
 
-        if (response.ok) console.log('Успех:', result.message);
+        if (response.ok) console.log(`Успех: ${result.message}. Кол-во кликов: ${result.newCount}`);
         else console.error('Ошибка сервера:', result.message);
-
     } catch (error) {
         console.error('Ошибка сети:', error);
     }
