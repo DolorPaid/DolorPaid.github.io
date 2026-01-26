@@ -1,6 +1,5 @@
 const API_URL = 'https://dolorpaid-github-io.onrender.com';
 
-// Получить корневой элемент (обычно <html>)
 const root = document.documentElement;
 
 async function GetLinks() {
@@ -131,11 +130,11 @@ async function ToLink(url) {
     // Создаем невидимую ссылку
     const link = document.createElement('a');
     link.href = url;
-    link.rel = 'noopener'; // Важно для безопасности[citation:6]
+    link.rel = 'noopener';
     link.style.display = 'none';
 
-    // Добавляем ссылку в документ, кликаем и удаляем
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+
 }
