@@ -128,5 +128,5 @@ async function ToLink(url) {
     } catch (error) {
         console.error('Ошибка сети:', error);
     }
-    window.open(url, "_blank")
+    window.open(url)
 }
