@@ -131,7 +131,6 @@ async function ToLink(url) {
     // Создаем невидимую ссылку
     const link = document.createElement('a');
     link.href = url;
-    link.target = '_blank'; // Чтобы открывалось в новой вкладке
     link.rel = 'noopener'; // Важно для безопасности[citation:6]
     link.style.display = 'none';
 
