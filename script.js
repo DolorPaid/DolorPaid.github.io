@@ -1,5 +1,8 @@
 const API_URL = 'https://dolorpaid-github-io.onrender.com';
 
+// Получить корневой элемент (обычно <html>)
+const root = document.documentElement;
+
 async function GetLinks() {
     try {
         const response = await fetch(`${API_URL}/api/GetLinks`);
@@ -10,6 +13,10 @@ async function GetLinks() {
     }
 }
 
+function isMobileDevice() {
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+}
+
 const body = document.querySelector('body')
 
 function StartScreen() {
@@ -18,7 +25,7 @@ function StartScreen() {
     display: flex;
     opacity: 0;
     height: 90vh;
-    font-size: 75px;
+    font-size: var(--startscreentextsize);
     justify-content: center;
     align-items: center;
     `
@@ -39,6 +46,11 @@ function StartScreen() {
     }, 500);
 }
 
+
+function checkAttribute(el, attribute) {
+    return el.hasAttribute(attribute)
+}
+
 async function StartMain() {
     const cont = document.querySelector('#container')
 
@@ -46,15 +58,30 @@ async function StartMain() {
         const Cells = await GetLinks()
 
         Cells.forEach(cellData => {
+            const title = cellData.title
+            const url = cellData.url
+            const description = cellData.description
+
             const cell = document.createElement('cell')
             cell.classList.add('cell')
-            cell.addEventListener('click', () => ToLink(`${cellData.url}`))
-            const Title = document.createElement('h2')
-            Title.textContent = cellData.title
-            const Desc = document.createElement('desc')
-            Desc.textContent = cellData.description
+            const ElementTitle = document.createElement('daunakusok')
+            ElementTitle.className = 'title'
+            ElementTitle.textContent = title
+            const ElementDesc = document.createElement('desc')
+            ElementDesc.textContent = description
 
-            cell.append(Title, Desc)
+            if (isMobileDevice()) {
+                cell.setAttribute('url', url)
+                cell.addEventListener('click', () => {
+                    if (cell.hasAttribute('ready'))
+                        ToLink(cell.getAttribute('url'))
+                    else
+                        cell.setAttribute('ready', 'true')
+                })
+            }
+            else cell.addEventListener('click', () => ToLink(`${url}`))
+
+            cell.append(ElementTitle, ElementDesc)
             cont.append(cell)
         })
 
@@ -69,7 +96,19 @@ async function StartMain() {
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
+    if (isMobileDevice()) {
+        root.style.setProperty('--startscreentextsize', '50px')
+        document.querySelector('#container').style.justifyContent = 'center'
+    }
     StartScreen()
+
+    document.addEventListener('click', (event) => {
+        const element = event.target
+        document.querySelectorAll('cell').forEach(cell => {
+            if (!cell.contains(element) && element != cell) cell.removeAttribute('ready')
+        })
+    });
+
 })
 
 async function ToLink(url) {
