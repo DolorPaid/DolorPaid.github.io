@@ -12,7 +12,7 @@
 * {
     background: var(--black);
     color: var(--white);
-    font-family: cursive;
+    font-family: 'Courier New', Courier, monospace;
 
     user-select: none;
     transition: 0.5s all;
