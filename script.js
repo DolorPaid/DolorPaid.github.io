@@ -2,6 +2,8 @@ const API_URL = 'https://dolorpaid-github-io.onrender.com';
 
 const root = document.documentElement;
 
+const cont = document.querySelector('#container')
+
 async function GetLinks() {
     try {
         const response = await fetch(`${API_URL}/api/GetLinks`);
@@ -19,30 +21,49 @@ function isMobileDevice() {
 const body = document.querySelector('body')
 
 function StartScreen() {
-    const hello_world = document.createElement('div')
-    hello_world.style = `
-    display: flex;
-    opacity: 0;
-    height: 90vh;
-    font-size: var(--startscreentextsize);
-    justify-content: center;
-    align-items: center;
-    `
 
-    hello_world.innerHTML = 'Hello, World!'
+    const char = document.createElement('char')
+    char.innerHTML = '>'
+    const hello_world = document.createElement('HelloWorld')
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz!@#$%&*='
+    const EndText = 'Hello, World!'
 
     body.prepend(hello_world)
+    hello_world.style.opacity = 1
 
-    setTimeout(() => {
-        hello_world.style.opacity = 1
-        setTimeout(() => {
-            hello_world.style.opacity = 0
+    let iter = 0
+
+    const interval = setInterval(() => {
+        hello_world.textContent = EndText
+            .split('')
+            .map((char, index) => {
+                if (index < iter) return char
+                return chars[Math.floor(Math.random() * chars.length)]
+            })
+            .join('')
+
+        iter += 1 / 3
+
+        if (iter >= EndText.length) {
+            clearInterval(interval)
+            hello_world.textContent = EndText
+            hello_world.className = 'end'
+            hello_world.prepend(char)
+
             setTimeout(() => {
-                hello_world.remove()
-                StartMain()
-            }, 500);
-        }, 1000);
-    }, 500);
+                char.className = 'end'
+                setTimeout(() => {
+                    hello_world.style.opacity = 0
+                    setTimeout(() => {
+                        hello_world.remove()
+                        ToMainPage()
+                    }, 500);
+                }, 450);
+            }, 200);
+        }
+    }, 15);
+
+
 }
 
 
@@ -50,9 +71,42 @@ function checkAttribute(el, attribute) {
     return el.hasAttribute(attribute)
 }
 
-async function StartMain() {
-    const cont = document.querySelector('#container')
+function ContainerToggle(type) {
+    cont.style.display = type == 0 ? 'none' : 'flex'
+    setTimeout(() => cont.style.opacity = type, 10);
+}
 
+
+async function ToChoosePage() {
+    ContainerToggle(0)
+    const Pages = [
+        { title: 'Игровая', func: () => ToMainPage()() },
+        { title: 'Информация', func: () => ToMainPage() }
+    ]
+    const pageContainer = document.createElement('div')
+    pageContainer.id = 'page-container'
+
+    Pages.forEach(page => {
+        const newPage = document.createElement('div')
+        newPage.className = 'page-btn'
+        newPage.textContent = page.title
+        newPage.addEventListener('click', page.func)
+
+        pageContainer.appendChild(newPage)
+    })
+
+    body.prepend(pageContainer)
+
+}
+
+async function ToGamePage() {
+    ContainerToggle(0)
+    ContainerToggle(1)
+}
+
+
+async function ToMainPage() {
+    ContainerToggle(0)
     try {
         const Cells = await GetLinks()
 
@@ -84,10 +138,8 @@ async function StartMain() {
             cont.append(cell)
         })
 
-        cont.style.display = 'flex'
-        setTimeout(() => {
-            cont.style.opacity = 1
-        }, 10);
+
+        ContainerToggle(1)
     } catch (error) {
         console.error('Ошибка загрузки ссылок: ', error)
         cont.innerHTML = 'Не удалось загрузить ссылки'
@@ -95,9 +147,10 @@ async function StartMain() {
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
+    ContainerToggle(0)
     if (isMobileDevice()) {
         root.style.setProperty('--startscreentextsize', '50px')
-        document.querySelector('#container').style.justifyContent = 'center'
+        cont.style.justifyContent = 'center'
     }
     StartScreen()
 
@@ -127,7 +180,7 @@ async function ToLink(url) {
     } catch (error) {
         console.error('Ошибка сети:', error);
     }
-    // Создаем невидимую ссылку
+
     const link = document.createElement('a');
     link.href = url;
     link.rel = 'noopener';
@@ -136,5 +189,4 @@ async function ToLink(url) {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-
 }

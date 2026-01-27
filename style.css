@@ -1,11 +1,12 @@
 :root {
-    --text-size: 20px;
+    --text-size: 10px;
     --container: oklch(29.292% 0.0247 195.962);
     --cell: oklch(23.929% 0.00003 271.152 / 0.966);
     --white: oklch(100% 0.00011 271.152);
     --black: oklch(0% 0 0);
     --gray: oklch(59.987% 0.00007 271.152);
     --startscreentextsize: 75px;
+    --helloworldendtextcolor: oklch(86.65% 0.29465 142.513);
 }
 
 * {
@@ -17,6 +18,33 @@
     transition: 0.5s all;
 }
 
+HelloWorld {
+    display: flex;
+    opacity: 0;
+    height: 90vh;
+    font-size: var(--startscreentextsize);
+    justify-content: center;
+    align-items: center;
+    transition: 0.5s all;
+}
+
+HelloWorld char {
+    color: var(--helloworldendtextcolor);
+    opacity: 0;
+    transition: 0.5s all;
+}
+
+HelloWorld char.end {
+    opacity: 1;
+    transform: translateX(-85%);
+}
+
+
+HelloWorld.end {
+    animation: normal;
+    color: var(--helloworldendtextcolor);
+}
+
 
 #container {
     display: none;
@@ -24,7 +52,7 @@
     opacity: 0;
     border: 5px solid var(--container);
     border-radius: 10px;
-    margin: 45px;
+    margin: 75px;
     gap: 15px;
     padding: 25px;
 }
@@ -44,6 +72,7 @@
     height: 100px;
     transition: 0.5s all;
     z-index: 0;
+    font-size: var(--text-size);
 }
 
 #container .cell>* {
@@ -53,17 +82,16 @@
 #container .cell desc {
     position: absolute;
     color: var(--gray);
-    font-size: 10px;
     text-align: center;
     transform: scale(0);
     bottom: 10px;
 }
 
-#container .cell .title {
+.title {
     position: absolute;
     text-align: center;
     top: 50%;
-    font-size: 25px;
+    font-size: 20px;
     transform: translateY(-50%);
     transition: 0.5s all;
 }
@@ -76,9 +104,42 @@
 
 #container .cell:is(:hover, :focus) .title {
     top: 0;
-    transform: scale(0.5) translateY(0);
+    transform: scale(0.6) translateY(0);
 }
 
 #container .cell:is(:hover, :focus) desc {
     transform: scale(1);
+}
+
+
+#page-container {
+    display: flex;
+    flex-direction: row;
+    top: 50%;
+    font-size: 25px;
+    gap: 25px;
+    border-radius: 25px;
+    padding: 15px;
+}
+
+.page-btn {
+    text-align: center;
+}
+
+
+
+@media (max-width: 385px) {
+    HelloWorld {
+        font-size: 35px;
+    }
+    #container {
+        margin: 10px;
+    }
+}
+
+
+@media (max-width: 290px) {
+    #container {
+        margin: 0;
+    }
 }
