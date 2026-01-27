@@ -21,9 +21,6 @@ function isMobileDevice() {
 const body = document.querySelector('body')
 
 function StartScreen() {
-
-    const char = document.createElement('char')
-    char.innerHTML = '>'
     const hello_world = document.createElement('HelloWorld')
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz!@#$%&*='
     const EndText = 'Hello, World!'
@@ -48,10 +45,10 @@ function StartScreen() {
             clearInterval(interval)
             hello_world.textContent = EndText
             hello_world.className = 'end'
-            hello_world.prepend(char)
 
             setTimeout(() => {
-                char.className = 'end'
+                hello_world.style.setProperty('--console_char', '1')
+                hello_world.style.setProperty('--console_anim', 'translateX(-55%)')
                 setTimeout(() => {
                     hello_world.style.opacity = 0
                     setTimeout(() => {
@@ -62,10 +59,7 @@ function StartScreen() {
             }, 200);
         }
     }, 15);
-
-
 }
-
 
 function ContainerToggle(type) {
     cont.style.display = type == 0 ? 'none' : 'flex'
@@ -73,6 +67,26 @@ function ContainerToggle(type) {
 }
 
 
+// async function ToChoosePage() {
+//     ContainerToggle(0)
+//     const Pages = [
+//         { title: 'Игровая', func: () => ToMainPage()() },
+//         { title: 'Информация', func: () => ToMainPage() }
+//     ]
+//     const pageContainer = document.createElement('div')
+//     pageContainer.id = 'page-container'
+
+//     Pages.forEach(page => {
+//         const newPage = document.createElement('div')
+//         newPage.className = 'page-btn'
+//         newPage.textContent = page.title
+//         newPage.addEventListener('click', page.func)
+
+//         pageContainer.appendChild(newPage)
+//     })
+
+//     body.prepend(pageContainer)
+// }
 
 async function ToGamePage() {
     ContainerToggle(0)
@@ -99,10 +113,12 @@ async function ToMainPage() {
             ElementDesc.textContent = description
 
             if (isMobileDevice()) {
-                cell.addEventListener('click', () => {
+                cell.addEventListener('click', (c) => {
+                    c.stopPropagation()
                     if (cell.hasAttribute('ready') == true || cell.getAttribute('ready') != null)
                         ToLink(`${url}`);
-                    else return cell.setAttribute('ready', 'true')
+                    else
+                        cell.setAttribute('ready', 'true')
                 })
             }
             else cell.addEventListener('click', () => ToLink(`${url}`))

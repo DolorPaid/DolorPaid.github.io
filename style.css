@@ -20,31 +20,27 @@
 
 HelloWorld {
     display: flex;
+    align-items: center;
+    justify-content: center;
     opacity: 0;
     height: 90vh;
     font-size: var(--startscreentextsize);
-    justify-content: center;
-    align-items: center;
     transition: 0.5s all;
+    --console_char: 0;
+    --console_anim: translateX(0%);
 }
-
-HelloWorld char {
-    color: var(--helloworldendtextcolor);
-    opacity: 0;
-    transition: 0.5s all;
-}
-
-HelloWorld char.end {
-    opacity: 1;
-    transform: translateX(-85%);
-}
-
 
 HelloWorld.end {
-    animation: normal;
     color: var(--helloworldendtextcolor);
 }
 
+HelloWorld::before {
+    content: '>';
+    color: var(--helloworldendtextcolor);
+    opacity: var(--console_char);
+    transform: var(--console_anim);
+    transition: 0.5s all;
+}
 
 #container {
     display: none;
@@ -128,17 +124,21 @@ HelloWorld.end {
 
 
 
-@media (max-width: 385px) {
+@media (max-width: 490px) {
     HelloWorld {
         font-size: 35px;
     }
+
     #container {
         margin: 10px;
     }
 }
 
+@media (max-width: 320px) {
+    HelloWorld {
+        font-size: 26px;
+    }
 
-@media (max-width: 290px) {
     #container {
         margin: 0;
     }
