@@ -113,12 +113,12 @@ async function ToMainPage() {
             ElementDesc.textContent = description
 
             if (isMobileDevice()) {
-                cell.addEventListener('click', (c) => {
+                cell.addEventListener('click', function (c) {
                     c.stopPropagation()
-                    if (cell.hasAttribute('ready') == true || cell.getAttribute('ready') != null)
-                        ToLink(`${url}`);
+                    if (cell.hasAttribute('ready'))
+                        ToLink(`${url}`)
                     else
-                        cell.setAttribute('ready', 'true')
+                        cell.setAttribute('ready', '')
                 })
             }
             else cell.addEventListener('click', () => ToLink(`${url}`))
@@ -140,6 +140,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (isMobileDevice()) {
         root.style.setProperty('--startscreentextsize', '50px')
         cont.style.justifyContent = 'center'
+
+        document.addEventListener('touchstart', (event) => {
+            const element = event.target
+            document.querySelectorAll('cell').forEach(cell => {
+                if (!cell.contains(element) && element != cell) cell.removeAttribute('ready')
+            })
+        })
     }
     StartScreen()
 
@@ -149,6 +156,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (!cell.contains(element) && element != cell) cell.removeAttribute('ready')
         })
     });
+
+
 
 })
 
@@ -170,12 +179,5 @@ async function ToLink(url) {
         console.error('Ошибка сети:', error)
     }
 
-    const link = document.createElement('a')
-    link.href = url
-    link.rel = 'noopener'
-    link.style.display = 'none'
-
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
+    window.location.href = url;
 }
