@@ -1,16 +1,16 @@
-const API_URL = 'https://dolorpaid-github-io.onrender.com';
+const API_URL = 'https://dolorpaid-github-io.onrender.com'
 
-const root = document.documentElement;
+const root = document.documentElement
 
 const cont = document.querySelector('#container')
 
 async function GetLinks() {
     try {
-        const response = await fetch(`${API_URL}/api/GetLinks`);
-        const data = await response.json();
+        const response = await fetch(`${API_URL}/api/GetLinks`)
+        const data = await response.json()
         return data.links
     } catch (error) {
-        console.error('Ошибка при запросе к API:', error);
+        console.error('Ошибка при запросе к API:', error)
     }
 }
 
@@ -67,37 +67,12 @@ function StartScreen() {
 }
 
 
-function checkAttribute(el, attribute) {
-    return el.hasAttribute(attribute)
-}
-
 function ContainerToggle(type) {
     cont.style.display = type == 0 ? 'none' : 'flex'
-    setTimeout(() => cont.style.opacity = type, 10);
+    setTimeout(() => cont.style.opacity = type, 10)
 }
 
 
-async function ToChoosePage() {
-    ContainerToggle(0)
-    const Pages = [
-        { title: 'Игровая', func: () => ToMainPage()() },
-        { title: 'Информация', func: () => ToMainPage() }
-    ]
-    const pageContainer = document.createElement('div')
-    pageContainer.id = 'page-container'
-
-    Pages.forEach(page => {
-        const newPage = document.createElement('div')
-        newPage.className = 'page-btn'
-        newPage.textContent = page.title
-        newPage.addEventListener('click', page.func)
-
-        pageContainer.appendChild(newPage)
-    })
-
-    body.prepend(pageContainer)
-
-}
 
 async function ToGamePage() {
     ContainerToggle(0)
@@ -124,12 +99,10 @@ async function ToMainPage() {
             ElementDesc.textContent = description
 
             if (isMobileDevice()) {
-                cell.setAttribute('url', url)
                 cell.addEventListener('click', () => {
-                    if (cell.hasAttribute('ready'))
-                        ToLink(cell.getAttribute('url'))
-                    else
-                        cell.setAttribute('ready', 'true')
+                    if (cell.hasAttribute('ready') == true || cell.getAttribute('ready') != null)
+                        ToLink(`${url}`);
+                    else return cell.setAttribute('ready', 'true')
                 })
             }
             else cell.addEventListener('click', () => ToLink(`${url}`))
@@ -171,22 +144,22 @@ async function ToLink(url) {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({ url: url })
-        });
+        })
 
-        const result = await response.json();
+        const result = await response.json()
 
         if (response.ok) console.log(`Успех: ${result.message}. Кол-во кликов: ${result.newCount}`);
         else console.error('Ошибка сервера:', result.message);
     } catch (error) {
-        console.error('Ошибка сети:', error);
+        console.error('Ошибка сети:', error)
     }
 
-    const link = document.createElement('a');
-    link.href = url;
-    link.rel = 'noopener';
-    link.style.display = 'none';
+    const link = document.createElement('a')
+    link.href = url
+    link.rel = 'noopener'
+    link.style.display = 'none'
 
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
 }
