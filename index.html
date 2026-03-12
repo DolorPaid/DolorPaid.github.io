@@ -1,15 +1,63 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MikeMartison</title>
+    <title>Nexus Messenger</title>
     <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
-    <section id="container"></section>
+    <button class="menu-toggle" onclick="toggleSidebar()">☰</button>
+
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <div class="user-profile">
+                <div class="avatar"></div>
+                <div class="user-info">
+                    <h3></h3>
+                </div>
+            </div>
+            <div class="search-box">
+                <input type="text" placeholder="Поиск чатов...">
+            </div>
+        </div>
+
+        <div class="chat-list">
+        
+        </div>
+    </aside>
+
+    <main class="chat-container">
+        <div class="chat-header-bar">
+            <div class="chat-header-info">
+                <div class="header-avatar" id="currentAvatar"></div>
+                <div class="header-text">
+                    <h4 id="currentChatName"></h4>
+                    <span id="currentStatus"></span>
+                </div>
+            </div>
+            <div class="header-actions">
+                <button class="icon-btn">⋮</button>
+                <button class="icon-btn" onclick="logout()">🚪</button>
+            </div>
+        </div>
+
+        <div class="messages-area" id="messagesArea">
+        </div>
+
+        <div class="input-area">
+            <div class="input-wrapper">
+                <button class="attach-btn">📎</button>
+                <input type="text" id="messageInput" placeholder="Написать сообщение..."
+                    onkeypress="handleKeyPress(event)">
+                <button class="attach-btn">😊</button>
+            </div>
+            <button class="send-btn" onclick="sendMessage()">➤</button>
+        </div>
+    </main>
+
     <script src="script.js"></script>
 </body>
 
