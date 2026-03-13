@@ -178,7 +178,6 @@ body {
     flex: 1;
 }
 
-/* ← НОВОЕ: Индикатор статуса в списке чатов */
 .status-dot {
     width: 8px;
     height: 8px;
@@ -201,6 +200,34 @@ body {
     color: var(--text-secondary);
     white-space: nowrap;
     margin-left: auto;
+}
+
+.delete-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 16px;
+    padding: 4px 8px;
+    border-radius: 6px;
+    transition: all 0.2s;
+    opacity: 0;
+}
+
+.chat-item:hover .delete-btn {
+    opacity: 1;
+}
+
+.delete-btn:hover {
+    background: rgba(239, 68, 68, 0.1);
+    color: var(--danger);
+}
+
+/* На мобильных всегда показываем */
+@media (max-width: 768px) {
+    .delete-btn {
+        opacity: 1;
+    }
 }
 
 .last-message {
@@ -252,7 +279,7 @@ body {
     height: 40px;
     border-radius: 50%;
     background: linear-gradient(135deg, #f093fb, #f5576c);
-    display: flex;
+    display: none;
     align-items: center;
     justify-content: center;
     font-weight: 600;
