@@ -32,7 +32,6 @@ function sendMessage() {
 
     if (!text || !selectedChat) return;
 
-    // Отправляем через WebSocket
     if (ws?.readyState === WebSocket.OPEN) {
         ws.send(JSON.stringify({
             type: 'message',
@@ -40,7 +39,6 @@ function sendMessage() {
             content: text
         }));
         
-        // Оптимистично показываем
         addMessage('outgoing', text, getCurrentTime());
         input.value = '';
         scrollToBottom();
@@ -82,7 +80,7 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
-// ========== HTTP API (для начальной загрузки) ==========
+// ========== HTTP API ==========
 
 async function apiGet(endpoint) {
     try {
@@ -130,14 +128,12 @@ function connectWebSocket() {
     
     ws.onopen = () => {
         
-        // Аутентификация
         ws.send(JSON.stringify({
             type: 'auth',
             userId: currentUser?.id,
-            nickname: currentUser?.nickname || currentUser?.username
+            nickname: currentUser?.nickname
         }));
         
-        // Heartbeat
         if (reconnectInterval) {
             clearInterval(reconnectInterval);
             reconnectInterval = null;
@@ -159,7 +155,6 @@ function connectWebSocket() {
     ws.onclose = () => {
         ws = null;
         
-        // Reconnect через 3 секунды
         if (!reconnectInterval) {
             reconnectInterval = setInterval(() => {
                 connectWebSocket();
@@ -173,44 +168,37 @@ function connectWebSocket() {
 }
 
 function handleWebSocketMessage(msg) {
-    switch (msg.type) {            
+    switch (msg.type) {
         case 'message:receive':
-            // Новое сообщение от собеседника
             if (selectedChat?.id === msg.sender_id) {
                 addMessage('incoming', msg.content, formatTime(msg.created_at));
             }
-            // Обновляем список диалогов
             loadConversations();
             break;
             
         case 'message:sent':
-            // Подтверждение отправки (можно обновить ID сообщения)
             break;
             
         case 'status':
-            // Обновление статуса пользователя
             userStatuses.set(msg.user_id, {
                 status: msg.status,
                 last_seen: new Date().toISOString()
             });
             updateChatListStatuses();
             
-            // Если открыт чат с этим пользователем — обновить шапку
             if (selectedChat?.id === msg.user_id) {
                 updateChatHeaderStatus(msg.user_id);
             }
             break;
             
         case 'online:list':
-            // Первоначальный список online
             msg.users?.forEach(u => {
-                userStatuses.set(u.id, { status: 'online' });
+                userStatuses.set(u.id, { status: 'online', nickname: u.nickname });
             });
-            renderChatList(); // Перерендер с статусами
+            renderChatList();
             break;
             
         case 'typing':
-            // Индикатор "печатает"
             if (selectedChat?.id === msg.sender_id && msg.is_typing) {
                 showTyping();
             } else {
@@ -259,11 +247,15 @@ function renderChatList() {
         
         div.addEventListener('click', () => selectChatByData(conv));
         
+        // Используем nickname вместо username
+        const displayName = conv.nickname || 'Unknown';
+        const avatarLetter = displayName[0].toUpperCase();
+        
         div.innerHTML = `
-            <div class="chat-avatar">${conv.username[0].toUpperCase()}</div>
+            <div class="chat-avatar">${avatarLetter}</div>
             <div class="chat-details">
                 <div class="chat-header">
-                    <span class="chat-name">${escapeHtml(conv.username)}</span>
+                    <span class="chat-name">${escapeHtml(displayName)}</span>
                     <span class="status-dot ${isOnline ? 'online' : 'offline'}"></span>
                     <span class="chat-meta">${formatTime(conv.last_time)}</span>
                 </div>
@@ -306,7 +298,7 @@ function updateChatHeaderStatus(userId) {
 function selectChatByData(conv) {
     selectedChat = {
         id: conv.user_id,
-        username: conv.username
+        nickname: conv.nickname
     };
     
     document.querySelectorAll('.chat-item').forEach(el => el.classList.remove('active'));
@@ -314,8 +306,10 @@ function selectChatByData(conv) {
     const chatElement = document.querySelector(`.chat-item[data-user-id="${conv.user_id}"]`);
     if (chatElement) chatElement.classList.add('active');
     
-    document.getElementById('currentChatName').textContent = conv.username;
-    document.getElementById('currentAvatar').textContent = conv.username[0].toUpperCase();
+    const displayName = conv.nickname || 'Unknown';
+    
+    document.getElementById('currentChatName').textContent = displayName;
+    document.getElementById('currentAvatar').textContent = displayName[0].toUpperCase();
     
     updateChatHeaderStatus(conv.user_id);
     
@@ -353,16 +347,15 @@ function formatTime(isoString) {
     return date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' });
 }
 
-// ========== Поиск пользователей ==========
+// ========== Поиск пользователей по nickname ==========
 
 async function loadAllUsers() {
     const data = await apiGet('/api/users');
     if (!data) return;
     
     allUsers = data.users || [];
-    // Заполняем статусы из загруженных
     data.users?.forEach(u => {
-        userStatuses.set(u.id, { status: u.status, last_seen: u.last_seen });
+        userStatuses.set(u.id, { status: u.status, nickname: u.nickname });
     });
 }
 
@@ -374,8 +367,9 @@ function filterUsers(searchTerm) {
         return;
     }
     
+    // Ищем по nickname
     const filtered = allUsers.filter(u =>
-        u.username.toLowerCase().includes(term) &&
+        u.nickname?.toLowerCase().includes(term) &&
         u.id !== currentUser?.id
     );
     
@@ -402,16 +396,16 @@ function renderUserSearchResults(users) {
         const div = document.createElement('div');
         div.className = 'chat-item';
         
-        const status = userStatuses.get(user.id);
-        const isOnline = status?.status === 'online';
+        const isOnline = user.status === 'online';
+        const avatarLetter = user.nickname?.[0]?.toUpperCase() || '?';
         
         div.addEventListener('click', () => startNewChat(user));
         
         div.innerHTML = `
-            <div class="chat-avatar">${user.username[0].toUpperCase()}</div>
+            <div class="chat-avatar">${avatarLetter}</div>
             <div class="chat-details">
                 <div class="chat-header">
-                    <span class="chat-name">${escapeHtml(user.username)}</span>
+                    <span class="chat-name">${escapeHtml(user.nickname)}</span>
                     <span class="status-dot ${isOnline ? 'online' : 'offline'}"></span>
                 </div>
                 <div class="last-message" style="color: #6366f1;">
@@ -427,7 +421,7 @@ function renderUserSearchResults(users) {
 function startNewChat(user) {
     selectedChat = {
         id: user.id,
-        username: user.username
+        nickname: user.nickname
     };
     
     const searchInput = document.querySelector('.search-box input');
@@ -435,8 +429,8 @@ function startNewChat(user) {
     
     document.querySelectorAll('.chat-item').forEach(el => el.classList.remove('active'));
     
-    document.getElementById('currentChatName').textContent = user.username;
-    document.getElementById('currentAvatar').textContent = user.username[0].toUpperCase();
+    document.getElementById('currentChatName').textContent = user.nickname;
+    document.getElementById('currentAvatar').textContent = user.nickname?.[0]?.toUpperCase() || '?';
     updateChatHeaderStatus(user.id);
     
     document.getElementById('messagesArea').innerHTML = '<div class="date-separator"><span>Сегодня</span></div>';
@@ -448,7 +442,7 @@ function startNewChat(user) {
     if (!conversations.find(c => c.user_id === user.id)) {
         conversations.unshift({
             user_id: user.id,
-            username: user.username,
+            nickname: user.nickname,
             last_message: 'Начните общение...',
             last_time: new Date().toISOString(),
             unread: 0
@@ -476,12 +470,11 @@ async function checkAuth() {
         const nameEl = document.querySelector('.user-info h3');
         const avatarEl = document.querySelector('.sidebar .avatar');
         
-        const displayName = currentUser.nickname || currentUser.username || 'User';
+        const displayName = currentUser.nickname || 'User';
         
         if (nameEl) nameEl.textContent = displayName;
         if (avatarEl) avatarEl.textContent = displayName[0].toUpperCase();
         
-        // Загружаем данные и подключаем WS
         await loadAllUsers();
         await loadConversations();
         connectWebSocket();
@@ -493,7 +486,6 @@ async function checkAuth() {
 }
 
 async function logout() {
-    // Отправляем offline статус
     if (ws?.readyState === WebSocket.OPEN) {
         ws.close();
     }
@@ -528,9 +520,3 @@ document.addEventListener('DOMContentLoaded', () => {
     
     checkAuth();
 });
-
-
-
-console.log('%c👀 Че ты тут ищешь?', 'font-size: 25px; color: red;');
-console.log('%cПосторонним просмотр запрещен — закрой вкладку.', 'font-size: 14px;');
-console.log('%cНо раз уж ты залез... Ctrl + W — панель разработчика закрывается.', 'font-size: 10px;');
