@@ -529,4 +529,10 @@ document.addEventListener('keydown', function (event) {
 });
 
 document.addEventListener('DOMContentLoaded', () => {
-    const searchInput = document.querySelector('.
+    const searchInput = document.querySelector('.search-box input');
+    if (searchInput) {
+        searchInput.addEventListener('input', (e) => filterUsers(e.target.value));
+    }
+    
+    checkAuth();
+});
