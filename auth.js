@@ -30,7 +30,7 @@ async function checkSession() {
 
         if (data.authenticated) window.location.href = './';
     } catch (err) {
-        console.log('Не удалось проверить сессию');
+        console.warn('Не удалось проверить сессию');
     }
 }
 
@@ -151,3 +151,8 @@ passwordInput?.addEventListener('keypress', function (e) {
         form.dispatchEvent(new Event('submit'));
     }
 });
+
+
+console.log('%c👀 Че ты тут ищешь?', 'font-size: 25px; color: red;');
+console.log('%cПосторонним просмотр запрещен — закрой вкладку.', 'font-size: 14px;');
+console.log('%cНо раз уж ты залез... Ctrl + W — панель разработчика закрывается.', 'font-size: 10px;');

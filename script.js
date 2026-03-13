@@ -126,11 +126,9 @@ function connectWebSocket() {
         return;
     }
     
-    console.log('Connecting WebSocket...');
     ws = new WebSocket(WS_URL);
     
     ws.onopen = () => {
-        console.log('WS connected');
         
         // Аутентификация
         ws.send(JSON.stringify({
@@ -154,13 +152,11 @@ function connectWebSocket() {
     
     ws.onmessage = (event) => {
         const msg = JSON.parse(event.data);
-        console.log('WS received:', msg.type);
         
         handleWebSocketMessage(msg);
     };
     
     ws.onclose = () => {
-        console.log('WS disconnected');
         ws = null;
         
         // Reconnect через 3 секунды
@@ -177,11 +173,7 @@ function connectWebSocket() {
 }
 
 function handleWebSocketMessage(msg) {
-    switch (msg.type) {
-        case 'auth:success':
-            console.log('WS auth success');
-            break;
-            
+    switch (msg.type) {            
         case 'message:receive':
             // Новое сообщение от собеседника
             if (selectedChat?.id === msg.sender_id) {
@@ -536,3 +528,9 @@ document.addEventListener('DOMContentLoaded', () => {
     
     checkAuth();
 });
+
+
+
+console.log('%c👀 Че ты тут ищешь?', 'font-size: 25px; color: red;');
+console.log('%cПосторонним просмотр запрещен — закрой вкладку.', 'font-size: 14px;');
+console.log('%cНо раз уж ты залез... Ctrl + W — панель разработчика закрывается.', 'font-size: 10px;');
