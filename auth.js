@@ -83,7 +83,7 @@ form?.addEventListener('submit', async function (e) {
     const password = passwordInput.value;
 
     if (!name || !password) {
-        errorMessage.textContent = 'Заполните все поля';
+        errorMessage.textContent = 'Алеша, заполни ВСЕ поля';
         errorMessage.classList.add('show');
         return;
     }
@@ -95,7 +95,7 @@ form?.addEventListener('submit', async function (e) {
     const checkAuth = await login(name, password);
 
     if (checkAuth.ok) showSuccessState();
-    else showErrorState(checkAuth.error || 'Неверный username или пароль');
+    else showErrorState('Точно из наших? Херня данные');
 });
 
 function showSuccessState() {
