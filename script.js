@@ -24,6 +24,7 @@ function closeChat() {
     selectedChat = null;
 }
 
+// ← НОВОЕ: Удаление чата
 async function deleteChat(userId, nickname) {
     if (!confirm(`Удалить чат с "${nickname}"? Все сообщения будут удалены безвозвратно.`)) {
         return;
@@ -37,12 +38,15 @@ async function deleteChat(userId, nickname) {
     const data = await res.json();
 
     if (data?.ok) {
+        // Удаляем из локального списка
         conversations = conversations.filter(c => c.user_id !== parseInt(userId));
 
+        // Если этот чат был открыт — закрываем
         if (selectedChat?.id === parseInt(userId)) {
             closeChat();
         }
 
+        // Обновляем список
         renderCombinedList();
     } else {
         alert('Ошибка при удалении чата');
@@ -53,16 +57,33 @@ function sendMessage() {
     const input = document.getElementById('messageInput');
     const text = input.value.trim();
 
-    if (!text || !selectedChat) return;
+    if (!text || !selectedChat || !selectedChat.id) return;
 
     if (ws?.readyState === WebSocket.OPEN) {
-        ws.send(JSON.stringify({
-            type: 'message',
-            receiver_id: selectedChat.id,
-            content: text
-        }));
+        if (selectedChat.isGroup) {
+            ws.send(JSON.stringify({
+                type: 'group:message',
+                content: text
+            }));
 
-        addMessage('outgoing', text, getCurrentTime());
+            addGroupMessage({
+                sender_id: currentUser.id,
+                sender_nickname: currentUser.nickname,
+                sender_is_admin: currentUser.is_admin,
+                content: text,
+                created_at: new Date().toISOString()
+            }, true);
+        } else {
+            ws.send(JSON.stringify({
+                type: 'message',
+                receiver_id: selectedChat.id,
+                content: text
+            }));
+
+            addMessage('outgoing', text, getCurrentTime());
+        }
+
+
         input.value = '';
         scrollToBottom();
     }
@@ -75,6 +96,22 @@ function addMessage(type, text, time) {
     messageDiv.innerHTML = `
         <div class="message-bubble">${escapeHtml(text)}</div>
         <span class="message-time">${time}</span>
+    `;
+    messagesArea.appendChild(messageDiv);
+    scrollToBottom();
+}
+
+function addGroupMessage(msg, isOwn) {
+    const messagesArea = document.getElementById('messagesArea');
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `message ${isOwn ? 'outgoing' : 'incoming'}`;
+
+    const adminBadge = msg.sender_is_admin ? '<span class="admin-badge" title="Администратор">⭐</span>' : '';
+
+    messageDiv.innerHTML = `
+        <div class="message-sender">${escapeHtml(msg.sender_nickname)} ${adminBadge}</div>
+        <div class="message-bubble">${escapeHtml(msg.content)}</div>
+        <span class="message-time">${formatTime(msg.created_at)}</span>
     `;
     messagesArea.appendChild(messageDiv);
     scrollToBottom();
@@ -142,10 +179,12 @@ function connectWebSocket() {
     if (ws?.readyState === WebSocket.OPEN || ws?.readyState === WebSocket.CONNECTING) {
         return;
     }
-    
+
+    console.log('Connecting WebSocket...');
     ws = new WebSocket(WS_URL);
 
     ws.onopen = () => {
+        console.log('WS connected');
 
         ws.send(JSON.stringify({
             type: 'auth',
@@ -167,6 +206,7 @@ function connectWebSocket() {
 
     ws.onmessage = (event) => {
         const msg = JSON.parse(event.data);
+        console.log('WS received:', msg.type);
 
         handleWebSocketMessage(msg);
     };
@@ -190,6 +230,7 @@ function connectWebSocket() {
 function handleWebSocketMessage(msg) {
     switch (msg.type) {
         case 'auth:success':
+            console.log('WS auth success');
             break;
 
         case 'message:receive':
@@ -252,11 +293,21 @@ async function loadConversations() {
     renderCombinedList();
 }
 
+
+
 function renderCombinedList() {
     const list = document.querySelector('.chat-list');
     if (!list) return;
 
     list.innerHTML = '';
+
+    const groupsHeader = document.createElement('div');
+    groupsHeader.style.cssText = 'padding: 12px 20px; color: #64748b; font-size: 12px; text-transform: uppercase;';
+    groupsHeader.textContent = 'Группы';
+    list.appendChild(groupsHeader);
+    const div = createGroupElement();
+    list.appendChild(div);
+
 
     const conversationIds = new Set(conversations.map(c => c.user_id));
 
@@ -285,6 +336,29 @@ function renderCombinedList() {
             list.appendChild(div);
         });
     }
+}
+
+function createGroupElement() {
+    const div = document.createElement('div');
+    div.className = 'chat-item';
+
+    const avatarLetter = 'AOA';
+
+    div.addEventListener('click', () => selectGroup('aoa', 'Age Of Autists', avatarLetter));
+
+    div.innerHTML = `
+        <div class="chat-avatar">${avatarLetter}</div>
+        <div class="chat-details">
+            <div class="chat-header">
+                <span class="chat-name">Age Of Autists</span>
+            </div>
+            <div class="last-message" style="color: #6366f1;">
+                Нажмите чтобы написать
+            </div>
+        </div>
+    `;
+
+    return div;
 }
 
 function createConversationElement(conv) {
@@ -359,6 +433,7 @@ function createUserElement(user) {
     return div;
 }
 
+
 function selectUser(userId, nickname, isConversation) {
     selectedChat = {
         id: userId,
@@ -394,6 +469,42 @@ function selectUser(userId, nickname, isConversation) {
     loadMessages(userId);
 }
 
+function selectGroup(groupId, name, avatarLetter) {
+    selectedChat = {
+        groupId: groupId,
+        name: name,
+        isGroup: true
+    };
+
+    document.querySelectorAll('.chat-item').forEach(el => el.classList.remove('active'));
+
+    const chatElement = document.querySelector(`.chat-item`);
+    if (chatElement) chatElement.classList.add('active');
+
+    document.getElementById('currentChatName').textContent = name;
+    document.getElementById('currentAvatar').textContent = avatarLetter.toUpperCase() || '?';
+
+    if (window.innerWidth <= 768) {
+        document.getElementById('sidebar').classList.remove('open');
+    }
+
+    // if (!isConversation) {
+    //     if (!conversations.find(c => c.user_id === userId)) {
+    //         conversations.unshift({
+    //             user_id: userId,
+    //             nickname: nickname,
+    //             last_message: '',
+    //             last_time: new Date().toISOString(),
+    //             unread: 0
+    //         });
+    //     }
+    // }
+
+    // loadMessages(userId);
+}
+
+
+
 function updateChatListStatuses() {
     document.querySelectorAll('.chat-item').forEach(item => {
         const userId = parseInt(item.dataset.userId);
@@ -425,6 +536,21 @@ async function loadMessages(userId) {
 
     const area = document.getElementById('messagesArea');
     area.innerHTML = '<div class="date-separator"><span>Сегодня</span></div>';
+
+    data.messages?.forEach(msg => {
+        const isOwn = msg.sender_id === currentUser?.id;
+        addMessage(isOwn ? 'outgoing' : 'incoming', msg.content, formatTime(msg.created_at));
+    });
+
+    scrollToBottom();
+}
+
+async function loadGroupMessages() {
+    const data = await apiGet(`/api/group/messages`);
+    if (!data) return;
+
+    const area = document.getElementById('messagesArea');
+    area.innerHTML = '<div class="date-separator"><span>Начало чата Аутистов</span></div>';
 
     data.messages?.forEach(msg => {
         const isOwn = msg.sender_id === currentUser?.id;
@@ -585,6 +711,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     checkAuth();
 });
+
 
 console.log('%c👀 Че ты тут ищешь?', 'font-size: 25px; color: red;');
 console.log('%cПосторонним просмотр запрещен — закрой вкладку.', 'font-size: 14px;');
