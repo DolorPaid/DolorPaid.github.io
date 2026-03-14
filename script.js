@@ -24,7 +24,6 @@ function closeChat() {
     selectedChat = null;
 }
 
-// ← НОВОЕ: Удаление чата
 async function deleteChat(userId, nickname) {
     if (!confirm(`Удалить чат с "${nickname}"? Все сообщения будут удалены безвозвратно.`)) {
         return;
@@ -38,15 +37,12 @@ async function deleteChat(userId, nickname) {
     const data = await res.json();
 
     if (data?.ok) {
-        // Удаляем из локального списка
         conversations = conversations.filter(c => c.user_id !== parseInt(userId));
 
-        // Если этот чат был открыт — закрываем
         if (selectedChat?.id === parseInt(userId)) {
             closeChat();
         }
 
-        // Обновляем список
         renderCombinedList();
     } else {
         alert('Ошибка при удалении чата');
@@ -146,12 +142,10 @@ function connectWebSocket() {
     if (ws?.readyState === WebSocket.OPEN || ws?.readyState === WebSocket.CONNECTING) {
         return;
     }
-
-    console.log('Connecting WebSocket...');
+    
     ws = new WebSocket(WS_URL);
 
     ws.onopen = () => {
-        console.log('WS connected');
 
         ws.send(JSON.stringify({
             type: 'auth',
@@ -173,7 +167,6 @@ function connectWebSocket() {
 
     ws.onmessage = (event) => {
         const msg = JSON.parse(event.data);
-        console.log('WS received:', msg.type);
 
         handleWebSocketMessage(msg);
     };
@@ -197,7 +190,6 @@ function connectWebSocket() {
 function handleWebSocketMessage(msg) {
     switch (msg.type) {
         case 'auth:success':
-            console.log('WS auth success');
             break;
 
         case 'message:receive':
@@ -593,3 +585,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     checkAuth();
 });
+
+console.log('%c👀 Че ты тут ищешь?', 'font-size: 25px; color: red;');
+console.log('%cПосторонним просмотр запрещен — закрой вкладку.', 'font-size: 14px;');
+console.log('%cНо раз уж ты залез... Ctrl + W — панель разработчика закрывается.', 'font-size: 10px;');
