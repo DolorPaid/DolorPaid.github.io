@@ -29,23 +29,23 @@ async function deleteChat(userId, nickname) {
     if (!confirm(`Удалить чат с "${nickname}"? Все сообщения будут удалены безвозвратно.`)) {
         return;
     }
-    
+
     const res = await fetch(`${API_URL}/api/conversations/${userId}`, {
         method: 'DELETE',
         credentials: 'include'
     });
-    
+
     const data = await res.json();
-    
+
     if (data?.ok) {
         // Удаляем из локального списка
         conversations = conversations.filter(c => c.user_id !== parseInt(userId));
-        
+
         // Если этот чат был открыт — закрываем
         if (selectedChat?.id === parseInt(userId)) {
             closeChat();
         }
-        
+
         // Обновляем список
         renderCombinedList();
     } else {
@@ -65,7 +65,7 @@ function sendMessage() {
             receiver_id: selectedChat.id,
             content: text
         }));
-        
+
         addMessage('outgoing', text, getCurrentTime());
         input.value = '';
         scrollToBottom();
@@ -146,49 +146,49 @@ function connectWebSocket() {
     if (ws?.readyState === WebSocket.OPEN || ws?.readyState === WebSocket.CONNECTING) {
         return;
     }
-    
+
     console.log('Connecting WebSocket...');
     ws = new WebSocket(WS_URL);
-    
+
     ws.onopen = () => {
         console.log('WS connected');
-        
+
         ws.send(JSON.stringify({
             type: 'auth',
             userId: currentUser?.id,
             nickname: currentUser?.nickname
         }));
-        
+
         if (reconnectInterval) {
             clearInterval(reconnectInterval);
             reconnectInterval = null;
         }
-        
+
         setInterval(() => {
             if (ws.readyState === WebSocket.OPEN) {
                 ws.send(JSON.stringify({ type: 'ping' }));
             }
         }, 30000);
     };
-    
+
     ws.onmessage = (event) => {
         const msg = JSON.parse(event.data);
         console.log('WS received:', msg.type);
-        
+
         handleWebSocketMessage(msg);
     };
-    
+
     ws.onclose = () => {
         console.log('WS disconnected');
         ws = null;
-        
+
         if (!reconnectInterval) {
             reconnectInterval = setInterval(() => {
                 connectWebSocket();
             }, 3000);
         }
     };
-    
+
     ws.onerror = (err) => {
         console.error('WS error:', err);
     };
@@ -199,37 +199,36 @@ function handleWebSocketMessage(msg) {
         case 'auth:success':
             console.log('WS auth success');
             break;
-            
+
         case 'message:receive':
             if (selectedChat?.id === msg.sender_id) {
                 addMessage('incoming', msg.content, formatTime(msg.created_at));
             }
             loadConversations();
             break;
-            
+
         case 'message:sent':
             break;
-            
+
         case 'status':
             userStatuses.set(msg.user_id, {
                 status: msg.status,
                 last_seen: new Date().toISOString()
             });
             updateChatListStatuses();
-            
+
             if (selectedChat?.id === msg.user_id) {
                 updateChatHeaderStatus(msg.user_id);
             }
             break;
-            
+
         case 'online:list':
             msg.users?.forEach(u => {
                 userStatuses.set(u.id, { status: 'online', nickname: u.nickname });
             });
             renderCombinedList();
             break;
-            
-        // ← НОВОЕ: Чат был удалён другим пользователем
+
         case 'conversation:deleted':
             conversations = conversations.filter(c => c.user_id !== msg.user_id);
             if (selectedChat?.id === msg.user_id) {
@@ -238,7 +237,7 @@ function handleWebSocketMessage(msg) {
             }
             renderCombinedList();
             break;
-            
+
         case 'typing':
             if (selectedChat?.id === msg.sender_id && msg.is_typing) {
                 showTyping();
@@ -246,7 +245,7 @@ function handleWebSocketMessage(msg) {
                 removeTyping();
             }
             break;
-            
+
         case 'error':
             console.error('WS server error:', msg.message);
             break;
@@ -256,7 +255,7 @@ function handleWebSocketMessage(msg) {
 async function loadConversations() {
     const data = await apiGet('/api/conversations');
     if (!data) return;
-    
+
     conversations = data.conversations || [];
     renderCombinedList();
 }
@@ -264,31 +263,31 @@ async function loadConversations() {
 function renderCombinedList() {
     const list = document.querySelector('.chat-list');
     if (!list) return;
-    
+
     list.innerHTML = '';
-    
+
     const conversationIds = new Set(conversations.map(c => c.user_id));
-    
+
     if (conversations.length > 0) {
         const dialogHeader = document.createElement('div');
         dialogHeader.style.cssText = 'padding: 12px 20px; color: #64748b; font-size: 12px; text-transform: uppercase;';
         dialogHeader.textContent = 'Диалоги';
         list.appendChild(dialogHeader);
-        
+
         conversations.forEach(conv => {
             const div = createConversationElement(conv);
             list.appendChild(div);
         });
     }
-    
+
     const otherUsers = allUsers.filter(u => !conversationIds.has(u.id));
-    
+
     if (otherUsers.length > 0) {
         const allHeader = document.createElement('div');
         allHeader.style.cssText = 'padding: 12px 20px; color: #64748b; font-size: 12px; text-transform: uppercase; border-top: 1px solid var(--bg-hover);';
         allHeader.textContent = 'Все пользователи';
         list.appendChild(allHeader);
-        
+
         otherUsers.forEach(user => {
             const div = createUserElement(user);
             list.appendChild(div);
@@ -296,26 +295,25 @@ function renderCombinedList() {
     }
 }
 
-// ← НОВОЕ: Создание элемента диалога с кнопкой удаления
 function createConversationElement(conv) {
     const div = document.createElement('div');
     div.className = 'chat-item';
     div.dataset.userId = conv.user_id;
-    
+
     if (selectedChat?.id === conv.user_id) {
         div.classList.add('active');
     }
-    
+
     const status = userStatuses.get(conv.user_id);
     const isOnline = status?.status === 'online';
     const avatarLetter = conv.nickname?.[0]?.toUpperCase() || '?';
-    
+
     div.addEventListener('click', (e) => {
         // Если клик на кнопку удаления — не открываем чат
         if (e.target.closest('.delete-btn')) return;
         selectUser(conv.user_id, conv.nickname, true);
     });
-    
+
     div.innerHTML = `
         <div class="chat-avatar">${avatarLetter}</div>
         <div class="chat-details" style="flex: 1; min-width: 0;">
@@ -331,14 +329,13 @@ function createConversationElement(conv) {
         </div>
         <button class="delete-btn" title="Удалить чат">🗑️</button>
     `;
-    
-    // Обработчик удаления
+
     const deleteBtn = div.querySelector('.delete-btn');
     deleteBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         deleteChat(conv.user_id, conv.nickname);
     });
-    
+
     return div;
 }
 
@@ -346,17 +343,19 @@ function createUserElement(user) {
     const div = document.createElement('div');
     div.className = 'chat-item';
     div.dataset.userId = user.id;
-    
+
     const isOnline = user.status === 'online';
+    const isAdmin = user.is_admin === true ? "⭐" : ''
     const avatarLetter = user.nickname?.[0]?.toUpperCase() || '?';
-    
-    div.addEventListener('click', () => selectUser(user.id, user.nickname, false));
-    
+
+
+    div.addEventListener('click', () => selectUser(user.id, `${user.nickname}${isAdmin}`, false));
+
     div.innerHTML = `
         <div class="chat-avatar">${avatarLetter}</div>
         <div class="chat-details">
             <div class="chat-header">
-                <span class="chat-name">${escapeHtml(user.nickname)}</span>
+                <span class="chat-name">${escapeHtml(user.nickname)}${isAdmin}</span>
                 <span class="status-dot ${isOnline ? 'online' : 'offline'}"></span>
             </div>
             <div class="last-message" style="color: #6366f1;">
@@ -364,7 +363,7 @@ function createUserElement(user) {
             </div>
         </div>
     `;
-    
+
     return div;
 }
 
@@ -373,21 +372,21 @@ function selectUser(userId, nickname, isConversation) {
         id: userId,
         nickname: nickname
     };
-    
+
     document.querySelectorAll('.chat-item').forEach(el => el.classList.remove('active'));
-    
+
     const chatElement = document.querySelector(`.chat-item[data-user-id="${userId}"]`);
     if (chatElement) chatElement.classList.add('active');
-    
-    document.getElementById('currentChatName').textContent = nickname;
+
+    document.getElementById('currentChatName').textContent = `${nickname}`;
     document.getElementById('currentAvatar').textContent = nickname?.[0]?.toUpperCase() || '?';
-    
+
     updateChatHeaderStatus(userId);
-    
+
     if (window.innerWidth <= 768) {
         document.getElementById('sidebar').classList.remove('open');
     }
-    
+
     if (!isConversation) {
         if (!conversations.find(c => c.user_id === userId)) {
             conversations.unshift({
@@ -399,7 +398,7 @@ function selectUser(userId, nickname, isConversation) {
             });
         }
     }
-    
+
     loadMessages(userId);
 }
 
@@ -407,7 +406,7 @@ function updateChatListStatuses() {
     document.querySelectorAll('.chat-item').forEach(item => {
         const userId = parseInt(item.dataset.userId);
         const status = userStatuses.get(userId);
-        
+
         const dot = item.querySelector('.status-dot');
         if (dot && status) {
             dot.className = `status-dot ${status.status === 'online' ? 'online' : 'offline'}`;
@@ -418,7 +417,7 @@ function updateChatListStatuses() {
 function updateChatHeaderStatus(userId) {
     const status = userStatuses.get(userId);
     const statusEl = document.getElementById('currentStatus');
-    
+
     if (statusEl && status) {
         const isOnline = status.status === 'online';
         statusEl.innerHTML = `
@@ -431,15 +430,15 @@ function updateChatHeaderStatus(userId) {
 async function loadMessages(userId) {
     const data = await apiGet(`/api/messages/${userId}`);
     if (!data) return;
-    
+
     const area = document.getElementById('messagesArea');
     area.innerHTML = '<div class="date-separator"><span>Сегодня</span></div>';
-    
+
     data.messages?.forEach(msg => {
         const isOwn = msg.sender_id === currentUser?.id;
         addMessage(isOwn ? 'outgoing' : 'incoming', msg.content, formatTime(msg.created_at));
     });
-    
+
     scrollToBottom();
 }
 
@@ -448,7 +447,7 @@ function formatTime(isoString) {
     const date = new Date(isoString);
     const now = new Date();
     const isToday = date.toDateString() === now.toDateString();
-    
+
     if (isToday) {
         return date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
     }
@@ -458,7 +457,7 @@ function formatTime(isoString) {
 async function loadAllUsers() {
     const data = await apiGet('/api/users');
     if (!data) return;
-    
+
     allUsers = data.users || [];
     data.users?.forEach(u => {
         userStatuses.set(u.id, { status: u.status, nickname: u.nickname });
@@ -467,51 +466,52 @@ async function loadAllUsers() {
 
 function filterUsers(searchTerm) {
     const term = searchTerm.toLowerCase().trim();
-    
+
     if (!term) {
         renderCombinedList();
         return;
     }
-    
+
     const filtered = allUsers.filter(u =>
         u.nickname?.toLowerCase().includes(term) &&
         u.id !== currentUser?.id
     );
-    
+
     renderSearchResults(filtered, term);
 }
 
 function renderSearchResults(users, term) {
     const list = document.querySelector('.chat-list');
     if (!list) return;
-    
+
     list.innerHTML = '';
-    
+
     if (users.length === 0) {
         list.innerHTML = `<div style="padding: 20px; color: #94a3b8; text-align: center;">По запросу "${escapeHtml(term)}" ничего не найдено</div>`;
         return;
     }
-    
+
     const header = document.createElement('div');
     header.style.cssText = 'padding: 12px 20px; color: #64748b; font-size: 12px; text-transform: uppercase;';
     header.textContent = `Результаты поиска (${users.length})`;
     list.appendChild(header);
-    
+
     users.forEach(user => {
         const div = document.createElement('div');
         div.className = 'chat-item';
         div.dataset.userId = user.id;
-        
+
         const isOnline = user.status === 'online';
+        const isAdmin = user.is_admin === true ? "⭐" : ''
         const avatarLetter = user.nickname?.[0]?.toUpperCase() || '?';
-        
-        div.addEventListener('click', () => selectUser(user.id, user.nickname, false));
-        
+
+        div.addEventListener('click', () => selectUser(user.id, `${user.nickname}${isAdmin}`, false));
+
         div.innerHTML = `
             <div class="chat-avatar">${avatarLetter}</div>
             <div class="chat-details">
                 <div class="chat-header">
-                    <span class="chat-name">${escapeHtml(user.nickname)}</span>
+                    <span class="chat-name">${escapeHtml(user.nickname)}${isAdmin}</span>
                     <span class="status-dot ${isOnline ? 'online' : 'offline'}"></span>
                 </div>
                 <div class="last-message" style="color: #6366f1;">
@@ -519,7 +519,7 @@ function renderSearchResults(users, term) {
                 </div>
             </div>
         `;
-        
+
         list.appendChild(div);
     });
 }
@@ -535,20 +535,25 @@ async function checkAuth() {
             window.location.href = './auth.html';
             return;
         }
-        
+
         currentUser = data.user;
-        
+
         const nameEl = document.querySelector('.user-info h3');
+        const rankEl = document.querySelector('.user-info p');
         const avatarEl = document.querySelector('.sidebar .avatar');
-        
+
         const displayName = currentUser.nickname || 'User';
-        
+
+        console.log(currentUser)
+
         if (nameEl) nameEl.textContent = displayName;
+        if (rankEl && currentUser.is_admin) rankEl.textContent = `⭐`;
         if (avatarEl) avatarEl.textContent = displayName[0].toUpperCase();
-        
+
+
         await Promise.all([loadAllUsers(), loadConversations()]);
         connectWebSocket();
-        
+
     } catch (e) {
         console.error('Auth error:', e);
         window.location.href = './auth.html';
@@ -559,7 +564,7 @@ async function logout() {
     if (ws?.readyState === WebSocket.OPEN) {
         ws.close();
     }
-    
+
     await apiPost('/api/logout', {});
     window.location.href = './auth.html';
 }
@@ -585,6 +590,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (searchInput) {
         searchInput.addEventListener('input', (e) => filterUsers(e.target.value));
     }
-    
+
     checkAuth();
 });
