@@ -9,10 +9,6 @@ let ws = null;
 let reconnectInterval = null;
 let userStatuses = new Map();
 
-function toggleSidebar() {
-    document.getElementById('sidebar').classList.toggle('open');
-}
-
 function getCurrentTime() {
     const now = new Date();
     return now.getHours().toString().padStart(2, '0') + ':' +
@@ -47,7 +43,6 @@ function closeChat() {
     selectedChat = null;
 }
 
-// ← НОВОЕ: Удаление чата
 async function deleteChat(userId, nickname) {
     if (!confirm(`Удалить чат с "${nickname}"? Все сообщения будут удалены безвозвратно.`)) {
         return;
@@ -74,6 +69,23 @@ async function deleteChat(userId, nickname) {
     } else {
         alert('Ошибка при удалении чата');
     }
+}
+
+async function clearGroup() {
+    if (!confirm(`[Доступ Администратора] Очистить историю группы? Все сообщения будут удалены безвозвратно.`)) return
+
+    const res = await fetch(`${API_URL}/api/group/messages`, {
+        method: 'DELETE',
+        credentials: 'include'
+    });
+
+    const data = await res.json();
+
+    if (data.ok) {
+        alert('История группы успешно очищена');
+        loadGroupMessages();
+    }
+    else alert('Ошибка при удалении истории');
 }
 
 function sendMessage() {
@@ -231,6 +243,7 @@ function connectWebSocket() {
 }
 
 function handleWebSocketMessage(msg) {
+    console.log(msg)
     switch (msg.type) {
         case 'auth:success':
             console.log('WS auth success');
@@ -327,7 +340,7 @@ function renderCombinedList() {
 
     if (conversations.length > 0) {
         const dialogHeader = document.createElement('div');
-        dialogHeader.style.cssText = 'padding: 12px 20px; color: #64748b; font-size: 12px; text-transform: uppercase;';
+        dialogHeader.style.cssText = 'padding: 12px 20px; color: #64748b; font-size: 12px; text-transform: uppercase; border-top: 1px solid var(--bg-hover);';
         dialogHeader.textContent = 'Диалоги';
         list.appendChild(dialogHeader);
 
@@ -361,13 +374,13 @@ function createGroupElement() {
     div.addEventListener('click', () => selectGroup('aoa', 'Age Of Autists', avatarLetter));
 
     div.innerHTML = `
-        <div class="chat-avatar">${avatarLetter}</div>
+        <div class="chat-avatar group-avatar">${avatarLetter}</div>
         <div class="chat-details">
             <div class="chat-header">
                 <span class="chat-name">Age Of Autists</span>
             </div>
             <div class="last-message" style="color: #6366f1;">
-                Нажмите чтобы написать
+                Нажмите чтобы перейти
             </div>
         </div>
     `;
@@ -432,7 +445,7 @@ function createUserElement(user) {
     div.addEventListener('click', () => selectUser(user.id, `${user.nickname}${isAdmin}`, false));
 
     div.innerHTML = `
-        <div class="chat-avatar">${avatarLetter}</div>
+        <div class="chat-avatar ${isAdmin ? 'admin-avatar' : ''}">${avatarLetter}</div>
         <div class="chat-details">
             <div class="chat-header">
                 <span class="chat-name">${escapeHtml(user.nickname)}${isAdmin}</span>
@@ -497,6 +510,7 @@ function selectGroup(groupId, name, avatarLetter) {
 
     document.getElementById('currentChatName').textContent = name;
     document.getElementById('currentAvatar').textContent = avatarLetter.toUpperCase() || '?';
+
 
     if (window.innerWidth <= 768) {
         document.getElementById('sidebar').classList.remove('open');
@@ -672,7 +686,11 @@ async function checkAuth() {
 
         if (nameEl) nameEl.textContent = displayName;
         if (rankEl && currentUser.is_admin) rankEl.textContent = `⭐`;
-        if (avatarEl) avatarEl.textContent = displayName[0].toUpperCase();
+        if (avatarEl) {
+            avatarEl.textContent = displayName[0].toUpperCase();
+            if (currentUser.is_admin) avatarEl.classList.add('admin-my-avatar')
+        }
+
 
 
         await Promise.all([loadAllUsers(), loadConversations()]);

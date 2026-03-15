@@ -61,6 +61,10 @@ body {
     position: relative;
 }
 
+.admin-my-avatar{
+    background: linear-gradient(135deg, #dae44e, #9c9548);
+}
+
 .user-info{
     display: flex;
     flex-direction: row;
@@ -149,6 +153,14 @@ body {
     justify-content: center;
     font-weight: 600;
     flex-shrink: 0;
+}
+
+.group-avatar {
+    background: linear-gradient(135deg, #66baea, #49649e);
+}
+
+.admin-avatar {
+    background: linear-gradient(135deg, #dae44e, #9c9548);
 }
 
 .chat-details {
