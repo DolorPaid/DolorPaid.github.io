@@ -13,6 +13,29 @@ function toggleSidebar() {
     document.getElementById('sidebar').classList.toggle('open');
 }
 
+function getCurrentTime() {
+    const now = new Date();
+    return now.getHours().toString().padStart(2, '0') + ':' +
+        now.getMinutes().toString().padStart(2, '0');
+}
+
+function handleKeyPress(event) {
+    if (event.key === 'Enter') {
+        sendMessage();
+    }
+}
+
+function scrollToBottom() {
+    const messagesArea = document.getElementById('messagesArea');
+    messagesArea.scrollTop = messagesArea.scrollHeight;
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
 function closeChat() {
     document.querySelectorAll('.chat-item').forEach(item => {
         item.classList.remove('active');
@@ -57,22 +80,24 @@ function sendMessage() {
     const input = document.getElementById('messageInput');
     const text = input.value.trim();
 
-    if (!text || !selectedChat || !selectedChat.id) return;
+    if (!text || !selectedChat) return;
 
     if (ws?.readyState === WebSocket.OPEN) {
         if (selectedChat.isGroup) {
             ws.send(JSON.stringify({
                 type: 'group:message',
-                content: text
+                content: text,
+                sender_id: currentUser.id,
+                biba: 123
             }));
 
-            addGroupMessage({
+            addGroupMessage(true, {
                 sender_id: currentUser.id,
                 sender_nickname: currentUser.nickname,
                 sender_is_admin: currentUser.is_admin,
                 content: text,
-                created_at: new Date().toISOString()
-            }, true);
+                created_at: getCurrentTime()
+            });
         } else {
             ws.send(JSON.stringify({
                 type: 'message',
@@ -101,7 +126,7 @@ function addMessage(type, text, time) {
     scrollToBottom();
 }
 
-function addGroupMessage(msg, isOwn) {
+function addGroupMessage(isOwn, msg) {
     const messagesArea = document.getElementById('messagesArea');
     const messageDiv = document.createElement('div');
     messageDiv.className = `message ${isOwn ? 'outgoing' : 'incoming'}`;
@@ -111,34 +136,12 @@ function addGroupMessage(msg, isOwn) {
     messageDiv.innerHTML = `
         <div class="message-sender">${escapeHtml(msg.sender_nickname)} ${adminBadge}</div>
         <div class="message-bubble">${escapeHtml(msg.content)}</div>
-        <span class="message-time">${formatTime(msg.created_at)}</span>
+        <span class="message-time">${msg.created_at}</span>
     `;
     messagesArea.appendChild(messageDiv);
     scrollToBottom();
 }
 
-function getCurrentTime() {
-    const now = new Date();
-    return now.getHours().toString().padStart(2, '0') + ':' +
-        now.getMinutes().toString().padStart(2, '0');
-}
-
-function handleKeyPress(event) {
-    if (event.key === 'Enter') {
-        sendMessage();
-    }
-}
-
-function scrollToBottom() {
-    const messagesArea = document.getElementById('messagesArea');
-    messagesArea.scrollTop = messagesArea.scrollHeight;
-}
-
-function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-}
 
 async function apiGet(endpoint) {
     try {
@@ -240,6 +243,18 @@ function handleWebSocketMessage(msg) {
             loadConversations();
             break;
 
+        case 'group:message:receive':
+            if (selectedChat?.isGroup) {
+                addGroupMessage(false, {
+                    sender_id: msg.sender_id,
+                    sender_nickname: msg.sender_nickname,
+                    sender_is_admin: msg.sender_is_admin,
+                    content: msg.content,
+                    created_at: formatTime(msg.created_at)
+                });
+            }
+            break;
+
         case 'message:sent':
             break;
 
@@ -292,7 +307,6 @@ async function loadConversations() {
     conversations = data.conversations || [];
     renderCombinedList();
 }
-
 
 
 function renderCombinedList() {
@@ -488,19 +502,7 @@ function selectGroup(groupId, name, avatarLetter) {
         document.getElementById('sidebar').classList.remove('open');
     }
 
-    // if (!isConversation) {
-    //     if (!conversations.find(c => c.user_id === userId)) {
-    //         conversations.unshift({
-    //             user_id: userId,
-    //             nickname: nickname,
-    //             last_message: '',
-    //             last_time: new Date().toISOString(),
-    //             unread: 0
-    //         });
-    //     }
-    // }
-
-    // loadMessages(userId);
+    loadGroupMessages()
 }
 
 
@@ -546,15 +548,21 @@ async function loadMessages(userId) {
 }
 
 async function loadGroupMessages() {
-    const data = await apiGet(`/api/group/messages`);
-    if (!data) return;
+    const data = await apiGet(`/api/group/messages`)
+    if (!data) return
 
     const area = document.getElementById('messagesArea');
     area.innerHTML = '<div class="date-separator"><span>Начало чата Аутистов</span></div>';
 
     data.messages?.forEach(msg => {
         const isOwn = msg.sender_id === currentUser?.id;
-        addMessage(isOwn ? 'outgoing' : 'incoming', msg.content, formatTime(msg.created_at));
+        addGroupMessage(isOwn, {
+            sender_id: msg.sender_id,
+            sender_nickname: msg.sender_nickname,
+            sender_is_admin: msg.sender_is_admin,
+            content: msg.content,
+            created_at: formatTime(msg.created_at)
+        });
     });
 
     scrollToBottom();
@@ -662,8 +670,6 @@ async function checkAuth() {
 
         const displayName = currentUser.nickname || 'User';
 
-        console.log(currentUser)
-
         if (nameEl) nameEl.textContent = displayName;
         if (rankEl && currentUser.is_admin) rankEl.textContent = `⭐`;
         if (avatarEl) avatarEl.textContent = displayName[0].toUpperCase();
@@ -713,6 +719,6 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 
-console.log('%c👀 Че ты тут ищешь?', 'font-size: 25px; color: red;');
-console.log('%cПосторонним просмотр запрещен — закрой вкладку.', 'font-size: 14px;');
-console.log('%cНо раз уж ты залез... Ctrl + W — панель разработчика закрывается.', 'font-size: 10px;');
+console.warn('%c👀 Че ты тут ищешь?', 'font-size: 25px; color: red;');
+console.warn('%cПосторонним просмотр запрещен — закрой вкладку.', 'font-size: 14px;');
+console.warn('%cНо раз уж ты залез... Ctrl + W — панель разработчика закрывается.', 'font-size: 10px;');
