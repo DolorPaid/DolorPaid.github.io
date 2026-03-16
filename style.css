@@ -26,7 +26,6 @@ body {
     display: flex;
 }
 
-/* Sidebar */
 .sidebar {
     width: 320px;
     background: var(--bg-card);
@@ -208,34 +207,6 @@ body {
     margin-left: auto;
 }
 
-.delete-btn {
-    background: transparent;
-    border: none;
-    color: var(--text-secondary);
-    cursor: pointer;
-    font-size: 16px;
-    padding: 4px 8px;
-    border-radius: 6px;
-    transition: all 0.2s;
-    opacity: 0;
-}
-
-.chat-item:hover .delete-btn {
-    opacity: 1;
-}
-
-.delete-btn:hover {
-    background: rgba(239, 68, 68, 0.1);
-    color: var(--danger);
-}
-
-/* На мобильных всегда показываем */
-@media (max-width: 768px) {
-    .delete-btn {
-        opacity: 1;
-    }
-}
-
 .last-message {
     font-size: 13px;
     color: var(--text-secondary);
@@ -257,7 +228,6 @@ body {
     margin-left: auto;
 }
 
-/* Main Chat Area */
 .chat-container {
     flex: 1;
     display: flex;
@@ -296,7 +266,6 @@ body {
     font-weight: 600;
 }
 
-/* ← ИСПРАВЛЕНО: Статус в шапке чата */
 .header-text span {
     font-size: 13px;
     display: flex;
@@ -304,7 +273,6 @@ body {
     gap: 6px;
 }
 
-/* ← НОВОЕ: Индикатор статуса в шапке */
 .status-indicator {
     width: 8px;
     height: 8px;
@@ -321,7 +289,6 @@ body {
     opacity: 0.5;
 }
 
-/* ← НОВОЕ: Цвет текста статуса */
 .status-text-online {
     color: var(--accent);
 }
@@ -410,10 +377,21 @@ body {
 }
 
 .message-time {
+    display: flex;
     font-size: 11px;
     color: var(--text-secondary);
     padding: 0 4px;
 }
+
+.message.outgoing .message-time {
+    justify-content: right;
+}
+
+.message.incoming .message-time {
+    justify-content: left;
+}
+
+
 
 .typing-indicator {
     display: flex;
@@ -532,7 +510,6 @@ body {
     transform: scale(0.95);
 }
 
-/* Mobile Menu Toggle */
 .menu-toggle {
     display: none;
     position: fixed;
@@ -550,7 +527,6 @@ body {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
-/* Responsive */
 @media (max-width: 768px) {
     .sidebar {
         position: fixed;
@@ -580,7 +556,6 @@ body {
     }
 }
 
-/* Scrollbar Styling */
 ::-webkit-scrollbar {
     width: 8px;
 }
@@ -598,7 +573,6 @@ body {
     background: var(--text-secondary);
 }
 
-/* Date separator */
 .date-separator {
     text-align: center;
     margin: 24px 0;

@@ -32,6 +32,10 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
+function clearMsgBtnVisible(visible) {
+    document.getElementById(`clear-msgs-btn`).style.display = visible ? 'block' : 'none'
+}
+
 function closeChat() {
     document.querySelectorAll('.chat-item').forEach(item => {
         item.classList.remove('active');
@@ -41,51 +45,55 @@ function closeChat() {
     document.getElementById('currentStatus').textContent = '';
     document.getElementById('messagesArea').innerHTML = '';
     selectedChat = null;
+    clearMsgBtnVisible(false)
 }
 
-async function deleteChat(userId, nickname) {
-    if (!confirm(`Удалить чат с "${nickname}"? Все сообщения будут удалены безвозвратно.`)) {
-        return;
-    }
+async function clearChatHistory() {
+    if (selectedChat) {
+        if (selectedChat.isGroup) {
+            if (!confirm(`[Доступ Администратора] Очистить историю группы? Все сообщения будут удалены безвозвратно.`)) return
 
-    const res = await fetch(`${API_URL}/api/conversations/${userId}`, {
-        method: 'DELETE',
-        credentials: 'include'
-    });
+            const res = await fetch(`${API_URL}/api/group/messages`, {
+                method: 'DELETE',
+                credentials: 'include'
+            });
 
-    const data = await res.json();
+            const data = await res.json();
 
-    if (data?.ok) {
-        // Удаляем из локального списка
-        conversations = conversations.filter(c => c.user_id !== parseInt(userId));
+            if (data?.ok) {
+                alert('История группы успешно очищена');
+                loadGroupMessages();
+            }
+            else alert('Ошибка при удалении истории');
+        } else {
+            try {
+                if (!confirm(`Очистить историю чата? Все сообщения будут удалены безвозвратно.`)) {
+                    return;
+                }
 
-        // Если этот чат был открыт — закрываем
-        if (selectedChat?.id === parseInt(userId)) {
-            closeChat();
+                const res = await fetch(`${API_URL}/api/conversations/${selectedChat.id}`, {
+                    method: 'DELETE',
+                    credentials: 'include'
+                });
+
+                const data = await res.json();
+
+                if (data?.ok) {
+                    conversations = conversations.filter(c => c.user_id !== parseInt(selectedChat.id));
+
+                    closeChat();
+                    renderCombinedList();
+
+                    alert('История чата успешно очищена');
+                } else throw err;
+            } catch (err) {
+                alert('Ошибка при удалении чата');
+                console.error('Ошибка при удалении чата: ', err)
+            }
         }
-
-        // Обновляем список
-        renderCombinedList();
     } else {
-        alert('Ошибка при удалении чата');
+        alert('Для очистки истории сообщений откройте чат.')
     }
-}
-
-async function clearGroup() {
-    if (!confirm(`[Доступ Администратора] Очистить историю группы? Все сообщения будут удалены безвозвратно.`)) return
-
-    const res = await fetch(`${API_URL}/api/group/messages`, {
-        method: 'DELETE',
-        credentials: 'include'
-    });
-
-    const data = await res.json();
-
-    if (data.ok) {
-        alert('История группы успешно очищена');
-        loadGroupMessages();
-    }
-    else alert('Ошибка при удалении истории');
 }
 
 function sendMessage() {
@@ -123,6 +131,7 @@ function sendMessage() {
 
         input.value = '';
         scrollToBottom();
+        loadConversations()
     }
 }
 
@@ -399,19 +408,18 @@ function createConversationElement(conv) {
 
     const status = userStatuses.get(conv.user_id);
     const isOnline = status?.status === 'online';
+    const isAdmin = conv.is_admin === true ? "⭐" : ''
     const avatarLetter = conv.nickname?.[0]?.toUpperCase() || '?';
 
     div.addEventListener('click', (e) => {
-        // Если клик на кнопку удаления — не открываем чат
-        if (e.target.closest('.delete-btn')) return;
-        selectUser(conv.user_id, conv.nickname, true);
+        selectUser(conv.user_id, `${conv.nickname}${isAdmin}`, true);
     });
 
     div.innerHTML = `
-        <div class="chat-avatar">${avatarLetter}</div>
+        <div class="chat-avatar ${isAdmin ? 'admin-avatar' : ''}">${avatarLetter}</div>
         <div class="chat-details" style="flex: 1; min-width: 0;">
             <div class="chat-header">
-                <span class="chat-name">${escapeHtml(conv.nickname)}</span>
+                <span class="chat-name">${escapeHtml(conv.nickname)}${isAdmin}</span>
                 <span class="status-dot ${isOnline ? 'online' : 'offline'}"></span>
                 <span class="chat-meta">${formatTime(conv.last_time)}</span>
             </div>
@@ -420,14 +428,7 @@ function createConversationElement(conv) {
                 ${conv.unread > 0 ? `<span class="unread-badge">${conv.unread}</span>` : ''}
             </div>
         </div>
-        <button class="delete-btn" title="Удалить чат">🗑️</button>
     `;
-
-    const deleteBtn = div.querySelector('.delete-btn');
-    deleteBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        deleteChat(conv.user_id, conv.nickname);
-    });
 
     return div;
 }
@@ -470,7 +471,10 @@ function selectUser(userId, nickname, isConversation) {
     document.querySelectorAll('.chat-item').forEach(el => el.classList.remove('active'));
 
     const chatElement = document.querySelector(`.chat-item[data-user-id="${userId}"]`);
-    if (chatElement) chatElement.classList.add('active');
+    if (chatElement) {
+        chatElement.classList.add('active');
+        chatElement.querySelector('.unread-badge')?.remove()
+    }
 
     document.getElementById('currentChatName').textContent = `${nickname}`;
     document.getElementById('currentAvatar').textContent = nickname?.[0]?.toUpperCase() || '?';
@@ -480,6 +484,7 @@ function selectUser(userId, nickname, isConversation) {
     if (window.innerWidth <= 768) {
         document.getElementById('sidebar').classList.remove('open');
     }
+
 
     if (!isConversation) {
         if (!conversations.find(c => c.user_id === userId)) {
@@ -494,6 +499,8 @@ function selectUser(userId, nickname, isConversation) {
     }
 
     loadMessages(userId);
+    loadConversations()
+    clearMsgBtnVisible(true)
 }
 
 function selectGroup(groupId, name, avatarLetter) {
@@ -517,9 +524,8 @@ function selectGroup(groupId, name, avatarLetter) {
     }
 
     loadGroupMessages()
+    clearMsgBtnVisible(true)
 }
-
-
 
 function updateChatListStatuses() {
     document.querySelectorAll('.chat-item').forEach(item => {
@@ -551,7 +557,7 @@ async function loadMessages(userId) {
     if (!data) return;
 
     const area = document.getElementById('messagesArea');
-    area.innerHTML = '<div class="date-separator"><span>Сегодня</span></div>';
+    area.innerHTML = '<div class="date-separator"><span>Начало чата</span></div>';
 
     data.messages?.forEach(msg => {
         const isOwn = msg.sender_id === currentUser?.id;
@@ -733,6 +739,7 @@ document.addEventListener('DOMContentLoaded', () => {
         searchInput.addEventListener('input', (e) => filterUsers(e.target.value));
     }
 
+    clearMsgBtnVisible(false)
     checkAuth();
 });
 
