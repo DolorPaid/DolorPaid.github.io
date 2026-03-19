@@ -9,6 +9,13 @@ let ws = null;
 let reconnectInterval = null;
 let userStatuses = new Map();
 
+// ========== EXAMPLE HEADER ==========
+// ========== EXAMPLE HEADER ==========
+// ----- SUB HEADER -----
+// ----- SUB HEADER -----
+
+
+// ========== API GET-POST ==========
 
 async function apiGet(endpoint) {
     try {
@@ -45,186 +52,11 @@ async function apiPost(endpoint, body) {
     }
 }
 
-function getCurrentTime() {
-    const now = new Date();
-    return now.getHours().toString().padStart(2, '0') + ':' +
-        now.getMinutes().toString().padStart(2, '0');
-}
-
-function handleKeyPress(event) {
-    if (event.key === 'Enter') {
-        sendMessage();
-    }
-}
-
-function headerActionsType(type, options) {
-    const headerActionElem = document.querySelector('.header-actions')
-
-    if (!headerActionElem) return
-
-    switch (type) {
-        case 0:
-            headerActionElem.innerHTML =
-                `
-                <button id="clear-msgs-btn" class="icon-btn" onclick="clearChatHistory()" title="Очистить историю сообщений">🗑️</button>
-                <button class="icon-btn" onclick="logout()" title="Выйти из аккаунта">🚪</button>
-                `
-            break;
-        case 1:
-            headerActionElem.innerHTML =
-                `
-                <button id="kick-user-btn" class="icon-btn" onclick="kickUser()" title="Выкинуть пользователя">🚫</button>
-                <button id="clear-msgs-btn" class="icon-btn" onclick="clearChatHistory()" title="Очистить историю сообщений">🗑️</button>
-                <button class="icon-btn" onclick="logout()" title="Выйти из аккаунта">🚪</button>
-                `
-            break;
-    }
-
-}
-
-function scrollToBottom() {
-    const messagesArea = document.getElementById('messagesArea');
-    messagesArea.scrollTop = messagesArea.scrollHeight;
-}
-
-function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-}
-
-function clearMsgBtnVisible(visible) {
-    document.getElementById(`clear-msgs-btn`).style.display = visible ? 'block' : 'none'
-}
-
-function closeChat() {
-    document.querySelectorAll('.chat-item').forEach(item => {
-        item.classList.remove('active');
-    });
-    document.getElementById('currentChatName').textContent = '';
-    document.getElementById('currentAvatar').textContent = '';
-    document.getElementById('currentStatus').textContent = '';
-    document.getElementById('messagesArea').innerHTML = '';
-    selectedChat = null;
-    clearMsgBtnVisible(false)
-    if (document.querySelector('#kick-user-btn')) document.querySelector('#kick-user-btn').remove()
-}
-
-async function clearChatHistory() {
-    if (selectedChat) {
-        if (selectedChat.isGroup) {
-            if (!confirm(`[Доступ Администратора] Очистить историю группы? Все сообщения будут удалены безвозвратно.`)) return
-
-            const res = await fetch(`${API_URL}/api/group/messages`, {
-                method: 'DELETE',
-                credentials: 'include'
-            });
-
-            const data = await res.json();
-
-            if (data?.ok) {
-                alert('История группы успешно очищена');
-                loadGroupMessages();
-            }
-            else alert('Ошибка при удалении истории');
-        } else {
-            try {
-                if (!confirm(`Очистить историю чата? Все сообщения будут удалены безвозвратно.`)) {
-                    return;
-                }
-
-                const res = await fetch(`${API_URL}/api/conversations/${selectedChat.id}`, {
-                    method: 'DELETE',
-                    credentials: 'include'
-                });
-
-                const data = await res.json();
-
-                if (data?.ok) {
-                    conversations = conversations.filter(c => c.user_id !== parseInt(selectedChat.id));
-
-                    closeChat();
-                    renderCombinedList();
-
-                    alert('История чата успешно очищена');
-                } else throw err;
-            } catch (err) {
-                alert('Ошибка при удалении чата');
-                console.error('Ошибка при удалении чата: ', err)
-            }
-        }
-    } else {
-        alert('Для очистки истории сообщений откройте чат.')
-    }
-}
-
-function sendMessage() {
-    const input = document.getElementById('messageInput');
-    const text = input.value.trim();
-
-    if (!text || !selectedChat) return;
-
-    if (ws?.readyState === WebSocket.OPEN) {
-        if (selectedChat.isGroup) {
-            ws.send(JSON.stringify({
-                type: 'group:message',
-                content: text,
-                sender_id: currentUser.id,
-                biba: 123
-            }));
-
-            addGroupMessage(true, {
-                sender_id: currentUser.id,
-                sender_nickname: currentUser.nickname,
-                sender_is_admin: currentUser.is_admin,
-                content: text,
-                created_at: getCurrentTime()
-            });
-        } else {
-            ws.send(JSON.stringify({
-                type: 'message',
-                receiver_id: selectedChat.id,
-                content: text
-            }));
-
-            addMessage('outgoing', text, getCurrentTime());
-        }
 
 
-        input.value = '';
-        scrollToBottom();
-        loadConversations()
-    }
-}
 
-function addMessage(type, text, time) {
-    const messagesArea = document.getElementById('messagesArea');
-    const messageDiv = document.createElement('div');
-    messageDiv.className = `message ${type}`;
-    messageDiv.innerHTML = `
-        <div class="message-bubble">${escapeHtml(text)}</div>
-        <span class="message-time">${time}</span>
-    `;
-    messagesArea.appendChild(messageDiv);
-    scrollToBottom();
-}
 
-function addGroupMessage(isOwn, msg) {
-    const messagesArea = document.getElementById('messagesArea');
-    const messageDiv = document.createElement('div');
-    messageDiv.className = `message ${isOwn ? 'outgoing' : 'incoming'}`;
-
-    const adminBadge = msg.sender_is_admin ? '<span class="admin-badge" title="Администратор">⭐</span>' : '';
-
-    messageDiv.innerHTML = `
-        <div class="message-sender">${escapeHtml(msg.sender_nickname)} ${adminBadge}</div>
-        <div class="message-bubble">${escapeHtml(msg.content)}</div>
-        <span class="message-time">${msg.created_at}</span>
-    `;
-    messagesArea.appendChild(messageDiv);
-    scrollToBottom();
-}
-
+// ========== WEB SOCKET ==========
 
 function connectWebSocket() {
     if (ws?.readyState === WebSocket.OPEN || ws?.readyState === WebSocket.CONNECTING) {
@@ -265,6 +97,7 @@ function connectWebSocket() {
     ws.onclose = () => {
         console.log('WS disconnected');
         ws = null;
+        currentUser = null
 
         if (!reconnectInterval) {
             reconnectInterval = setInterval(() => {
@@ -286,6 +119,7 @@ function handleWebSocketMessage(msg) {
 
         case 'auth:kicked':
             alert('Администратор выкинул вас из сети');
+            logout()
             checkAuth();
             break;
 
@@ -353,57 +187,128 @@ function handleWebSocketMessage(msg) {
     }
 }
 
-async function loadConversations() {
-    const data = await apiGet('/api/conversations');
-    if (!data) return;
 
-    conversations = data.conversations || [];
-    renderCombinedList();
+
+
+
+// ========== CHECK FUNCTIONS ==========
+
+async function checkAuth() {
+    try {
+        const res = await fetch(`${API_URL}/api/check-session`, {
+            credentials: 'include'
+        });
+        const data = await res.json();
+
+        if (!data?.authenticated) {
+            window.location.href = './auth.html';
+            return;
+        }
+
+        currentUser = data.user;
+
+        const nameEl = document.querySelector('.user-info h3');
+        const rankEl = document.querySelector('.user-info p');
+        const avatarEl = document.querySelector('.sidebar .avatar');
+
+        const displayName = currentUser.nickname || 'User';
+
+        if (nameEl) nameEl.textContent = displayName;
+        if (rankEl && currentUser.is_admin) rankEl.textContent = `⭐`;
+        if (avatarEl) {
+            avatarEl.textContent = displayName[0].toUpperCase();
+            if (currentUser.is_admin) avatarEl.classList.add('admin-my-avatar')
+        }
+
+
+
+        await Promise.all([loadAllUsers(), loadConversations()]);
+        connectWebSocket();
+
+    } catch (e) {
+        console.error('Auth error:', e);
+        window.location.href = './auth.html';
+    }
+}
+
+async function logout() {
+    if (ws?.readyState === WebSocket.OPEN) {
+        ws.close();
+    }
+
+    await apiPost('/api/logout', {});
+    window.location.href = './auth.html';
+}
+
+async function checkAdmin() {
+    try {
+        const data = await apiGet(`/api/check-admin`)
+
+        if (!data?.ok) return false
+        else return true
+    } catch (err) {
+        console.error('Check Admin error: ', err)
+    }
 }
 
 
-function renderCombinedList() {
-    const list = document.querySelector('.chat-list');
-    if (!list) return;
-
-    list.innerHTML = '';
-
-    const groupsHeader = document.createElement('div');
-    groupsHeader.style.cssText = 'padding: 12px 20px; color: #64748b; font-size: 12px; text-transform: uppercase;';
-    groupsHeader.textContent = 'Группы';
-    list.appendChild(groupsHeader);
-    const div = createGroupElement();
-    list.appendChild(div);
 
 
-    const conversationIds = new Set(conversations.map(c => c.user_id));
 
-    if (conversations.length > 0) {
-        const dialogHeader = document.createElement('div');
-        dialogHeader.style.cssText = 'padding: 12px 20px; color: #64748b; font-size: 12px; text-transform: uppercase; border-top: 1px solid var(--bg-hover);';
-        dialogHeader.textContent = 'Диалоги';
-        list.appendChild(dialogHeader);
+// ========== HTML FUNCTIONS ==========
 
-        conversations.forEach(conv => {
-            const div = createConversationElement(conv);
-            list.appendChild(div);
-        });
-    }
+// ----- SUB HEADER -----
 
-    const otherUsers = allUsers.filter(u => !conversationIds.has(u.id));
-
-    if (otherUsers.length > 0) {
-        const allHeader = document.createElement('div');
-        allHeader.style.cssText = 'padding: 12px 20px; color: #64748b; font-size: 12px; text-transform: uppercase; border-top: 1px solid var(--bg-hover);';
-        allHeader.textContent = 'Все пользователи';
-        list.appendChild(allHeader);
-
-        otherUsers.forEach(user => {
-            const div = createUserElement(user);
-            list.appendChild(div);
-        });
+function handleKeyPress(event) {
+    if (event.key === 'Enter') {
+        sendMessage();
     }
 }
+
+function headerActionsType(type) {
+    const headerActionElem = document.querySelector('.header-actions')
+
+    if (!headerActionElem) return
+
+    switch (type) {
+        case 0:
+            headerActionElem.innerHTML =
+                `
+                <button class="icon-btn" onclick="logout()" title="Выйти из аккаунта">🚪</button>
+                `
+            break;
+        case 1:
+            headerActionElem.innerHTML =
+                `
+                <button id="clear-msgs-btn" class="icon-btn" onclick="clearChatHistory()" title="Очистить историю сообщений">🗑️</button>
+                <button class="icon-btn" onclick="logout()" title="Выйти из аккаунта">🚪</button>
+                `
+            break;
+        case 2:
+            headerActionElem.innerHTML =
+                `
+                <button id="kick-user-btn" class="icon-btn" onclick="kickUser()" title="Выкинуть пользователя">🚫</button>
+                <button id="clear-msgs-btn" class="icon-btn" onclick="clearChatHistory()" title="Очистить историю сообщений">🗑️</button>
+                <button class="icon-btn" onclick="logout()" title="Выйти из аккаунта">🚪</button>
+                `
+            break;
+    }
+
+}
+
+function scrollToBottom() {
+    const messagesArea = document.getElementById('messagesArea');
+    messagesArea.scrollTop = messagesArea.scrollHeight;
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+
+// ----- CREATE ELEMENTS -----
 
 function createGroupElement() {
     const div = document.createElement('div');
@@ -492,6 +397,148 @@ function createUserElement(user) {
     return div;
 }
 
+
+
+
+
+// ========== SYSTEMS OF CHAT FUNCTIONS ==========
+
+// ----- BUTTONS CHAT -----
+
+function closeChat() {
+    document.querySelectorAll('.chat-item').forEach(item => {
+        item.classList.remove('active');
+    });
+    document.getElementById('currentChatName').textContent = '';
+    document.getElementById('currentAvatar').textContent = '';
+    document.getElementById('currentStatus').textContent = '';
+    document.getElementById('messagesArea').innerHTML = '';
+    selectedChat = null;
+    headerActionsType(0)
+    if (document.querySelector('#kick-user-btn')) document.querySelector('#kick-user-btn').remove()
+}
+
+async function clearChatHistory() {
+    if (selectedChat) {
+        if (selectedChat.isGroup) {
+            if (!confirm(`[Доступ Администратора] Очистить историю группы? Все сообщения будут удалены безвозвратно.`)) return
+
+            const res = await fetch(`${API_URL}/api/group/messages`, {
+                method: 'DELETE',
+                credentials: 'include'
+            });
+
+            const data = await res.json();
+
+            if (data?.ok) {
+                alert('История группы успешно очищена');
+                loadGroupMessages();
+            }
+            else alert('Ошибка при удалении истории');
+        } else {
+            try {
+                if (!confirm(`Очистить историю чата? Все сообщения будут удалены безвозвратно.`)) {
+                    return;
+                }
+
+                const res = await fetch(`${API_URL}/api/conversations/${selectedChat.id}`, {
+                    method: 'DELETE',
+                    credentials: 'include'
+                });
+
+                const data = await res.json();
+
+                if (data?.ok) {
+                    conversations = conversations.filter(c => c.user_id !== parseInt(selectedChat.id));
+
+                    closeChat();
+                    renderCombinedList();
+
+                    alert('История чата успешно очищена');
+                } else throw err;
+            } catch (err) {
+                alert('Ошибка при удалении чата');
+                console.error('Ошибка при удалении чата: ', err)
+            }
+        }
+    } else {
+        alert('Для очистки истории сообщений откройте чат.')
+    }
+}
+
+
+// ----- SEND MESSAGES -----
+
+function sendMessage() {
+    const input = document.getElementById('messageInput');
+    const text = input.value.trim();
+
+    if (!text || !selectedChat) return;
+
+    if (ws?.readyState === WebSocket.OPEN) {
+        if (selectedChat.isGroup) {
+            ws.send(JSON.stringify({
+                type: 'group:message',
+                content: text,
+                sender_id: currentUser.id,
+                biba: 123
+            }));
+
+            addGroupMessage(true, {
+                sender_id: currentUser.id,
+                sender_nickname: currentUser.nickname,
+                sender_is_admin: currentUser.is_admin,
+                content: text,
+                created_at: getCurrentTime()
+            });
+        } else {
+            ws.send(JSON.stringify({
+                type: 'message',
+                receiver_id: selectedChat.id,
+                content: text
+            }));
+
+            addMessage('outgoing', text, getCurrentTime());
+        }
+
+
+        input.value = '';
+        scrollToBottom();
+        loadConversations()
+    }
+}
+
+function addMessage(type, text, time) {
+    const messagesArea = document.getElementById('messagesArea');
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `message ${type}`;
+    messageDiv.innerHTML = `
+        <div class="message-bubble">${escapeHtml(text)}</div>
+        <span class="message-time">${time}</span>
+    `;
+    messagesArea.appendChild(messageDiv);
+    scrollToBottom();
+}
+
+function addGroupMessage(isOwn, msg) {
+    const messagesArea = document.getElementById('messagesArea');
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `message ${isOwn ? 'outgoing' : 'incoming'}`;
+
+    const adminBadge = msg.sender_is_admin ? '<span class="admin-badge" title="Администратор">⭐</span>' : '';
+
+    messageDiv.innerHTML = `
+        <div class="message-sender">${escapeHtml(msg.sender_nickname)} ${adminBadge}</div>
+        <div class="message-bubble">${escapeHtml(msg.content)}</div>
+        <span class="message-time">${msg.created_at}</span>
+    `;
+    messagesArea.appendChild(messageDiv);
+    scrollToBottom();
+}
+
+
+// ----- SELECT FUNCTIONS -----
+
 function selectUser(userId, nickname, isConversation) {
     selectedChat = {
         id: userId,
@@ -501,9 +548,6 @@ function selectUser(userId, nickname, isConversation) {
     document.querySelectorAll('.chat-item').forEach(el => el.classList.remove('active'));
 
     const chatElement = document.querySelector(`.chat-item[data-user-id="${userId}"]`);
-    if (document.querySelector('#kick-user-btn')) document.querySelector('#kick-user-btn').remove()
-
-    headerActionsType(checkAdmin() ? 1 : 0)
 
     document.getElementById('currentChatName').textContent = `${nickname}`;
     document.getElementById('currentAvatar').textContent = nickname?.[0]?.toUpperCase() || '?';
@@ -529,7 +573,7 @@ function selectUser(userId, nickname, isConversation) {
 
     loadMessages(userId);
     loadConversations()
-    clearMsgBtnVisible(true)
+    headerActionsType(checkAdmin() ? 2 : 1)
 
     if (chatElement) {
         chatElement.classList.add('active');
@@ -560,33 +604,21 @@ function selectGroup(groupId, name, avatarLetter) {
     }
 
     loadGroupMessages()
-    clearMsgBtnVisible(true)
+    headerActionsType(1)
 }
 
-function updateChatListStatuses() {
-    document.querySelectorAll('.chat-item').forEach(item => {
-        const userId = parseInt(item.dataset.userId);
-        const status = userStatuses.get(userId);
 
-        const dot = item.querySelector('.status-dot');
-        if (dot && status) {
-            dot.className = `status-dot ${status.status === 'online' ? 'online' : 'offline'}`;
-        }
-    });
-}
 
-function updateChatHeaderStatus(userId) {
-    const status = userStatuses.get(userId);
-    const statusEl = document.getElementById('currentStatus');
-    if (!statusEl) return
 
-    if (status) {
-        const isOnline = status?.status === 'online';
-        statusEl.innerHTML = `
-            <span class="status-indicator ${isOnline ? 'online' : 'offline'}"></span>
-            ${isOnline ? 'в сети' : 'не в сети'}
-        `
-    } else statusEl.innerHTML = ''
+
+// ========== LOAD FUNCTIONS ==========
+
+async function loadConversations() {
+    const data = await apiGet('/api/conversations');
+    if (!data) return;
+
+    conversations = data.conversations || [];
+    renderCombinedList();
 }
 
 async function loadMessages(userId) {
@@ -625,18 +657,6 @@ async function loadGroupMessages() {
     scrollToBottom();
 }
 
-function formatTime(isoString) {
-    if (!isoString) return '';
-    const date = new Date(isoString);
-    const now = new Date();
-    const isToday = date.toDateString() === now.toDateString();
-
-    if (isToday) {
-        return date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
-    }
-    return date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' });
-}
-
 async function loadAllUsers() {
     const data = await apiGet('/api/users');
     if (!data) return;
@@ -647,20 +667,53 @@ async function loadAllUsers() {
     });
 }
 
-function filterUsers(searchTerm) {
-    const term = searchTerm.toLowerCase().trim();
 
-    if (!term) {
-        renderCombinedList();
-        return;
+
+
+
+// ========== RENDER n UPDATE FUNCTIONS ==========
+
+function renderCombinedList() {
+    const list = document.querySelector('.chat-list');
+    if (!list) return;
+
+    list.innerHTML = '';
+
+    const groupsHeader = document.createElement('div');
+    groupsHeader.style.cssText = 'padding: 12px 20px; color: #64748b; font-size: 12px; text-transform: uppercase;';
+    groupsHeader.textContent = 'Группы';
+    list.appendChild(groupsHeader);
+    const div = createGroupElement();
+    list.appendChild(div);
+
+
+    const conversationIds = new Set(conversations.map(c => c.user_id));
+
+    if (conversations.length > 0) {
+        const dialogHeader = document.createElement('div');
+        dialogHeader.style.cssText = 'padding: 12px 20px; color: #64748b; font-size: 12px; text-transform: uppercase; border-top: 1px solid var(--bg-hover);';
+        dialogHeader.textContent = 'Диалоги';
+        list.appendChild(dialogHeader);
+
+        conversations.forEach(conv => {
+            const div = createConversationElement(conv);
+            list.appendChild(div);
+        });
     }
 
-    const filtered = allUsers.filter(u =>
-        u.nickname?.toLowerCase().includes(term) &&
-        u.id !== currentUser?.id
-    );
+    const otherUsers = allUsers.filter(u => !conversationIds.has(u.id));
 
-    renderSearchResults(filtered, term);
+    if (otherUsers.length > 0) {
+        const allHeader = document.createElement('div');
+        allHeader.style.cssText = 'padding: 12px 20px; color: #64748b; font-size: 12px; text-transform: uppercase; border-top: 1px solid var(--bg-hover);';
+        allHeader.textContent = 'Все пользователи';
+        list.appendChild(allHeader);
+
+        otherUsers.forEach(user => {
+            const div = createUserElement(user);
+            list.appendChild(div);
+        });
+    }
 }
 
 function renderSearchResults(users, term) {
@@ -707,76 +760,97 @@ function renderSearchResults(users, term) {
     });
 }
 
-async function checkAuth() {
-    try {
-        const res = await fetch(`${API_URL}/api/check-session`, {
-            credentials: 'include'
-        });
-        const data = await res.json();
+function updateChatListStatuses() {
+    document.querySelectorAll('.chat-item').forEach(item => {
+        const userId = parseInt(item.dataset.userId);
+        const status = userStatuses.get(userId);
 
-        if (!data?.authenticated) {
-            window.location.href = './auth.html';
-            return;
+        const dot = item.querySelector('.status-dot');
+        if (dot && status) {
+            dot.className = `status-dot ${status.status === 'online' ? 'online' : 'offline'}`;
         }
-
-        currentUser = data.user;
-
-        const nameEl = document.querySelector('.user-info h3');
-        const rankEl = document.querySelector('.user-info p');
-        const avatarEl = document.querySelector('.sidebar .avatar');
-
-        const displayName = currentUser.nickname || 'User';
-
-        if (nameEl) nameEl.textContent = displayName;
-        if (rankEl && currentUser.is_admin) rankEl.textContent = `⭐`;
-        if (avatarEl) {
-            avatarEl.textContent = displayName[0].toUpperCase();
-            if (currentUser.is_admin) avatarEl.classList.add('admin-my-avatar')
-        }
-
-
-
-        await Promise.all([loadAllUsers(), loadConversations()]);
-        connectWebSocket();
-
-    } catch (e) {
-        console.error('Auth error:', e);
-        window.location.href = './auth.html';
-    }
+    });
 }
 
-async function logout() {
-    if (ws?.readyState === WebSocket.OPEN) {
-        ws.close();
-    }
+function updateChatHeaderStatus(userId) {
+    const status = userStatuses.get(userId);
+    const statusEl = document.getElementById('currentStatus');
+    if (!statusEl) return
 
-    await apiPost('/api/logout', {});
-    window.location.href = './auth.html';
+    if (status) {
+        const isOnline = status?.status === 'online';
+        statusEl.innerHTML = `
+            <span class="status-indicator ${isOnline ? 'online' : 'offline'}"></span>
+            ${isOnline ? 'в сети' : 'не в сети'}
+        `
+    } else statusEl.innerHTML = ''
 }
 
 
-async function checkAdmin() {
-    try {
-        const data = await apiGet(`/api/check-admin`)
 
-        if (!data?.ok) return false
-        else return true
-    } catch (err) {
-        console.error('Check Admin error: ', err)
-    }
-}
+
+
+// ========== ADMIN FUNCTIONS ==========
 
 async function kickUser() {
-    try {
-        const data = await apiGet(`/api/user/kick/${userId}`);
+    if (selectedChat && selectedChat?.id) {
+        try {
+            const data = await apiGet(`/api/user/kick/${selectedChat?.id}`);
 
-        if (data.ok) alert('Пользователь был выкинут из сети')
-        else alert('Пользователь не был кикнут из сети: ', data.reason)
+            if (data.ok) alert('Пользователь был выкинут из сети')
+            else alert('Пользователь не был кикнут из сети: ', data.reason)
 
-    } catch (err) {
-        console.log('Kick User Error: ', err)
+        } catch (err) {
+            console.log('Kick User Error: ', err)
+        }
     }
 }
+
+
+
+
+
+// ========== ADDITIONAL FUNCTIONS ==========
+
+function getCurrentTime() {
+    const now = new Date();
+    return now.getHours().toString().padStart(2, '0') + ':' +
+        now.getMinutes().toString().padStart(2, '0');
+}
+
+function formatTime(isoString) {
+    if (!isoString) return '';
+    const date = new Date(isoString);
+    const now = new Date();
+    const isToday = date.toDateString() === now.toDateString();
+
+    if (isToday) {
+        return date.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+    }
+    return date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' });
+}
+
+function filterUsers(searchTerm) {
+    const term = searchTerm.toLowerCase().trim();
+
+    if (!term) {
+        renderCombinedList();
+        return;
+    }
+
+    const filtered = allUsers.filter(u =>
+        u.nickname?.toLowerCase().includes(term) &&
+        u.id !== currentUser?.id
+    );
+
+    renderSearchResults(filtered, term);
+}
+
+
+
+
+
+// ========== EVENT LISTENERES ==========
 
 document.addEventListener('click', function (event) {
     const sidebar = document.getElementById('sidebar');
@@ -800,10 +874,15 @@ document.addEventListener('DOMContentLoaded', () => {
         searchInput.addEventListener('input', (e) => filterUsers(e.target.value));
     }
 
-    // clearMsgBtnVisible(false)
+    headerActionsType(0)
     checkAuth();
 });
 
+
+
+
+
+// ========== НЕХУЙ ЗЫРИТЬ ==========
 
 console.warn('%c👀 Че ты тут ищешь?', 'font-size: 25px; color: red;');
 console.warn('%cПосторонним просмотр запрещен — закрой вкладку.', 'font-size: 14px;');
