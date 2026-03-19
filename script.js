@@ -9,6 +9,42 @@ let ws = null;
 let reconnectInterval = null;
 let userStatuses = new Map();
 
+
+async function apiGet(endpoint) {
+    try {
+        const res = await fetch(`${API_URL}${endpoint}`, {
+            credentials: 'include'
+        });
+        if (res.status === 401) {
+            window.location.href = './auth.html';
+            return null;
+        }
+        return res.json();
+    } catch (e) {
+        console.error('API GET error:', e);
+        return null;
+    }
+}
+
+async function apiPost(endpoint, body) {
+    try {
+        const res = await fetch(`${API_URL}${endpoint}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify(body)
+        });
+        if (res.status === 401) {
+            window.location.href = './auth.html';
+            return null;
+        }
+        return res.json();
+    } catch (e) {
+        console.error('API POST error:', e);
+        return null;
+    }
+}
+
 function getCurrentTime() {
     const now = new Date();
     return now.getHours().toString().padStart(2, '0') + ':' +
@@ -19,6 +55,31 @@ function handleKeyPress(event) {
     if (event.key === 'Enter') {
         sendMessage();
     }
+}
+
+function headerActionsType(type, options) {
+    const headerActionElem = document.querySelector('.header-actions')
+
+    if (!headerActionElem) return
+
+    switch (type) {
+        case 0:
+            headerActionElem.innerHTML =
+                `
+                <button id="clear-msgs-btn" class="icon-btn" onclick="clearChatHistory()" title="Очистить историю сообщений">🗑️</button>
+                <button class="icon-btn" onclick="logout()" title="Выйти из аккаунта">🚪</button>
+                `
+            break;
+        case 1:
+            headerActionElem.innerHTML =
+                `
+                <button id="kick-user-btn" class="icon-btn" onclick="kickUser()" title="Выкинуть пользователя">🚫</button>
+                <button id="clear-msgs-btn" class="icon-btn" onclick="clearChatHistory()" title="Очистить историю сообщений">🗑️</button>
+                <button class="icon-btn" onclick="logout()" title="Выйти из аккаунта">🚪</button>
+                `
+            break;
+    }
+
 }
 
 function scrollToBottom() {
@@ -46,6 +107,7 @@ function closeChat() {
     document.getElementById('messagesArea').innerHTML = '';
     selectedChat = null;
     clearMsgBtnVisible(false)
+    if (document.querySelector('#kick-user-btn')) document.querySelector('#kick-user-btn').remove()
 }
 
 async function clearChatHistory() {
@@ -164,41 +226,6 @@ function addGroupMessage(isOwn, msg) {
 }
 
 
-async function apiGet(endpoint) {
-    try {
-        const res = await fetch(`${API_URL}${endpoint}`, {
-            credentials: 'include'
-        });
-        if (res.status === 401) {
-            window.location.href = './auth.html';
-            return null;
-        }
-        return res.json();
-    } catch (e) {
-        console.error('API GET error:', e);
-        return null;
-    }
-}
-
-async function apiPost(endpoint, body) {
-    try {
-        const res = await fetch(`${API_URL}${endpoint}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            credentials: 'include',
-            body: JSON.stringify(body)
-        });
-        if (res.status === 401) {
-            window.location.href = './auth.html';
-            return null;
-        }
-        return res.json();
-    } catch (e) {
-        console.error('API POST error:', e);
-        return null;
-    }
-}
-
 function connectWebSocket() {
     if (ws?.readyState === WebSocket.OPEN || ws?.readyState === WebSocket.CONNECTING) {
         return;
@@ -252,10 +279,14 @@ function connectWebSocket() {
 }
 
 function handleWebSocketMessage(msg) {
-    console.log(msg)
     switch (msg.type) {
         case 'auth:success':
             console.log('WS auth success');
+            break;
+
+        case 'auth:kicked':
+            alert('Администратор выкинул вас из сети');
+            checkAuth();
             break;
 
         case 'message:receive':
@@ -263,6 +294,9 @@ function handleWebSocketMessage(msg) {
                 addMessage('incoming', msg.content, formatTime(msg.created_at));
             }
             loadConversations();
+            break;
+
+        case 'message:sent':
             break;
 
         case 'group:message:receive':
@@ -275,9 +309,6 @@ function handleWebSocketMessage(msg) {
                     created_at: formatTime(msg.created_at)
                 });
             }
-            break;
-
-        case 'message:sent':
             break;
 
         case 'status':
@@ -461,7 +492,6 @@ function createUserElement(user) {
     return div;
 }
 
-
 function selectUser(userId, nickname, isConversation) {
     selectedChat = {
         id: userId,
@@ -471,10 +501,9 @@ function selectUser(userId, nickname, isConversation) {
     document.querySelectorAll('.chat-item').forEach(el => el.classList.remove('active'));
 
     const chatElement = document.querySelector(`.chat-item[data-user-id="${userId}"]`);
-    if (chatElement) {
-        chatElement.classList.add('active');
-        chatElement.querySelector('.unread-badge')?.remove()
-    }
+    if (document.querySelector('#kick-user-btn')) document.querySelector('#kick-user-btn').remove()
+
+    headerActionsType(checkAdmin() ? 1 : 0)
 
     document.getElementById('currentChatName').textContent = `${nickname}`;
     document.getElementById('currentAvatar').textContent = nickname?.[0]?.toUpperCase() || '?';
@@ -501,6 +530,11 @@ function selectUser(userId, nickname, isConversation) {
     loadMessages(userId);
     loadConversations()
     clearMsgBtnVisible(true)
+
+    if (chatElement) {
+        chatElement.classList.add('active');
+        chatElement.querySelector('.unread-badge')?.remove()
+    }
 }
 
 function selectGroup(groupId, name, avatarLetter) {
@@ -514,10 +548,12 @@ function selectGroup(groupId, name, avatarLetter) {
 
     const chatElement = document.querySelector(`.chat-item`);
     if (chatElement) chatElement.classList.add('active');
+    if (document.querySelector('#kick-user-btn')) document.querySelector('#kick-user-btn').remove()
 
     document.getElementById('currentChatName').textContent = name;
     document.getElementById('currentAvatar').textContent = avatarLetter.toUpperCase() || '?';
 
+    updateChatHeaderStatus(false)
 
     if (window.innerWidth <= 768) {
         document.getElementById('sidebar').classList.remove('open');
@@ -542,14 +578,15 @@ function updateChatListStatuses() {
 function updateChatHeaderStatus(userId) {
     const status = userStatuses.get(userId);
     const statusEl = document.getElementById('currentStatus');
+    if (!statusEl) return
 
-    if (statusEl && status) {
-        const isOnline = status.status === 'online';
+    if (status) {
+        const isOnline = status?.status === 'online';
         statusEl.innerHTML = `
             <span class="status-indicator ${isOnline ? 'online' : 'offline'}"></span>
             ${isOnline ? 'в сети' : 'не в сети'}
-        `;
-    }
+        `
+    } else statusEl.innerHTML = ''
 }
 
 async function loadMessages(userId) {
@@ -717,6 +754,30 @@ async function logout() {
     window.location.href = './auth.html';
 }
 
+
+async function checkAdmin() {
+    try {
+        const data = await apiGet(`/api/check-admin`)
+
+        if (!data?.ok) return false
+        else return true
+    } catch (err) {
+        console.error('Check Admin error: ', err)
+    }
+}
+
+async function kickUser() {
+    try {
+        const data = await apiGet(`/api/user/kick/${userId}`);
+
+        if (data.ok) alert('Пользователь был выкинут из сети')
+        else alert('Пользователь не был кикнут из сети: ', data.reason)
+
+    } catch (err) {
+        console.log('Kick User Error: ', err)
+    }
+}
+
 document.addEventListener('click', function (event) {
     const sidebar = document.getElementById('sidebar');
     const menuToggle = document.querySelector('.menu-toggle');
@@ -739,7 +800,7 @@ document.addEventListener('DOMContentLoaded', () => {
         searchInput.addEventListener('input', (e) => filterUsers(e.target.value));
     }
 
-    clearMsgBtnVisible(false)
+    // clearMsgBtnVisible(false)
     checkAuth();
 });
 
