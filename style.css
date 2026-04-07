@@ -433,7 +433,7 @@ body {
     padding: 20px 24px;
     background: var(--bg-card);
     border-top: 1px solid var(--bg-hover);
-    display: flex;
+    display: none;
     gap: 12px;
     align-items: flex-end;
 }

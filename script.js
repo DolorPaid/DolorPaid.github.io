@@ -416,6 +416,8 @@ function closeChat() {
     selectedChat = null;
     headerActionsType(0)
     if (document.querySelector('#kick-user-btn')) document.querySelector('#kick-user-btn').remove()
+    
+    document.querySelector('.input-area').style.display = 'none'
 }
 
 async function clearChatHistory() {
@@ -579,6 +581,8 @@ function selectUser(userId, nickname, isConversation) {
         chatElement.classList.add('active');
         chatElement.querySelector('.unread-badge')?.remove()
     }
+
+    document.querySelector('.input-area').style.display = 'flex'
 }
 
 function selectGroup(groupId, name, avatarLetter) {
@@ -605,6 +609,7 @@ function selectGroup(groupId, name, avatarLetter) {
 
     loadGroupMessages()
     headerActionsType(1)
+    document.querySelector('.input-area').style.display = 'flex'
 }
 
 
