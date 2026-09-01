@@ -885,6 +885,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (isTelegram) {
         document.getElementById('messagesArea').style.background = 'red'
+        document.getElementById('sidebar').style.background = 'blue'
     } else {
         checkAuth();
     }
