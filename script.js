@@ -902,12 +902,16 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 function toggleSidebar() {
-    // document.getElementById('sidebar').classList.toggle('open');
+    document.getElementById('sidebar').classList.toggle('open');
+
     const isTelegram = new URLSearchParams(location.search).has('tg')
+    const tg = window.Telegram.WebApp;
+
+    document.querySelector('.search-box').querySelector('input').placeholder =
+        'initData: ' + (tg.initData ? 'ЕСТЬ;' : 'НЕТ;') +
+        ' User: ' + (tg.initDataUnsafe?.user?.first_name || 'нет');
 
     if (isTelegram) {
-        const tg = window.Telegram.WebApp;
-
         if (tg.initDataUnsafe?.user) {
             const data = JSON.stringify({
                 action: 'test2_telegram',
