@@ -900,8 +900,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
             console.log('Отправляю:', data);
             tg.sendData(data);
-
-            setTimeout(() => tg.close(), 500);
         } else {
             console.error('Нет данных пользователя!');
         }
