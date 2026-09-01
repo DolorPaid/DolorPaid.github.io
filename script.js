@@ -416,7 +416,7 @@ function closeChat() {
     selectedChat = null;
     headerActionsType(0)
     if (document.querySelector('#kick-user-btn')) document.querySelector('#kick-user-btn').remove()
-    
+
     document.querySelector('.input-area').style.display = 'none'
 }
 
@@ -880,7 +880,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     headerActionsType(0)
-    checkAuth();
+
+    const isTelegram = new URLSearchParams(location.search).has('tg')
+
+    if (isTelegram) {
+        document.getElementById('messagesArea').style.background = 'red'
+    } else {
+        checkAuth();
+    }
 });
 
 
