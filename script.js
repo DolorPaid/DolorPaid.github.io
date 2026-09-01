@@ -891,8 +891,6 @@ document.addEventListener('DOMContentLoaded', () => {
             tg.sendData(JSON.stringify({
                 action: 'test_telegram'
             }));
-
-            tg.close()
         }
     } else {
         checkAuth();
@@ -912,8 +910,6 @@ function toggleSidebar() {
             tg.sendData(JSON.stringify({
                 action: 'sidebar_test'
             }));
-
-            tg.close()
         }
     }
 }
