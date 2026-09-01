@@ -153,6 +153,13 @@ passwordInput?.addEventListener('keypress', function (e) {
 });
 
 
+const isTelegram = new URLSearchParams(location.search).has('tg')
+
+if(isTelegram){
+    document.querySelector('.brand-name').textContent = 'Telegram Nexus'
+}
+
+
 console.log('%c👀 Че ты тут ищешь?', 'font-size: 25px; color: red;');
 console.log('%cПосторонним просмотр запрещен — закрой вкладку.', 'font-size: 14px;');
 console.log('%cНо раз уж ты залез... Ctrl + W — панель разработчика закрывается.', 'font-size: 10px;');
