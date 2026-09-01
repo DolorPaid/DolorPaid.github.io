@@ -884,14 +884,39 @@ document.addEventListener('DOMContentLoaded', () => {
     const isTelegram = new URLSearchParams(location.search).has('tg')
 
     if (isTelegram) {
-        document.getElementById('messagesArea').style.background = 'red'
-        document.getElementById('sidebar').style.background = 'blue'
+        const tg = window.Telegram.WebApp
+        tg.ready()
+
+        if (tg.initDataUnsafe.user) {
+            tg.sendData(JSON.stringify({
+                action: 'test_telegram'
+            }));
+
+            tg.close()
+        }
     } else {
         checkAuth();
     }
 });
 
+function toggleSidebar() {
+    // document.getElementById('sidebar').classList.toggle('open');
 
+    const isTelegram = new URLSearchParams(location.search).has('tg')
+
+    if (isTelegram) {
+        const tg = window.Telegram.WebApp
+        tg.ready()
+
+        if (tg.initDataUnsafe.user) {
+            tg.sendData(JSON.stringify({
+                action: 'sidebar_test'
+            }));
+
+            tg.close()
+        }
+    }
+}
 
 
 
