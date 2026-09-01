@@ -888,9 +888,6 @@ document.addEventListener('DOMContentLoaded', () => {
         tg.ready();
         tg.expand();
 
-        console.log('initData:', tg.initData);
-        console.log('user:', tg.initDataUnsafe?.user);
-
         if (tg.initDataUnsafe?.user) {
             const data = JSON.stringify({
                 action: 'test_telegram',
@@ -898,10 +895,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 username: tg.initDataUnsafe.user.username
             });
 
-            console.log('Отправляю:', data);
             tg.sendData(data);
-        } else {
-            console.error('Нет данных пользователя!');
         }
     } else {
         checkAuth();
@@ -910,6 +904,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function toggleSidebar() {
     // document.getElementById('sidebar').classList.toggle('open');
+    const isTelegram = new URLSearchParams(location.search).has('tg')
+
+    if (isTelegram) {
+        const tg = window.Telegram.WebApp;
+
+        if (tg.initDataUnsafe?.user) {
+            const data = JSON.stringify({
+                action: 'test2_telegram',
+                user_id: tg.initDataUnsafe.user.id,
+                username: tg.initDataUnsafe.user.username
+            });
+
+            tg.sendData(data);
+        }
+    }
 }
 
 
