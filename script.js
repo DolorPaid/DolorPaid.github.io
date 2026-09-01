@@ -884,13 +884,26 @@ document.addEventListener('DOMContentLoaded', () => {
     const isTelegram = new URLSearchParams(location.search).has('tg')
 
     if (isTelegram) {
-        const tg = window.Telegram.WebApp
-        tg.ready()
+        const tg = window.Telegram.WebApp;
+        tg.ready();
+        tg.expand();
 
-        if (tg.initDataUnsafe.user) {
-            tg.sendData(JSON.stringify({
-                action: 'test_telegram'
-            }));
+        console.log('initData:', tg.initData);
+        console.log('user:', tg.initDataUnsafe?.user);
+
+        if (tg.initDataUnsafe?.user) {
+            const data = JSON.stringify({
+                action: 'test_telegram',
+                user_id: tg.initDataUnsafe.user.id,
+                username: tg.initDataUnsafe.user.username
+            });
+
+            console.log('Отправляю:', data);
+            tg.sendData(data);
+
+            setTimeout(() => tg.close(), 500);
+        } else {
+            console.error('Нет данных пользователя!');
         }
     } else {
         checkAuth();
@@ -899,19 +912,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
 function toggleSidebar() {
     // document.getElementById('sidebar').classList.toggle('open');
-
-    const isTelegram = new URLSearchParams(location.search).has('tg')
-
-    if (isTelegram) {
-        const tg = window.Telegram.WebApp
-        tg.ready()
-
-        if (tg.initDataUnsafe.user) {
-            tg.sendData(JSON.stringify({
-                action: 'sidebar_test'
-            }));
-        }
-    }
 }
 
 
