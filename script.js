@@ -891,8 +891,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (tg.initDataUnsafe?.user) {
             const data = JSON.stringify({
                 action: 'test_telegram',
-                user_id: tg.initDataUnsafe.user.id,
-                username: tg.initDataUnsafe.user.username
+                user_id: tg.initDataUnsafe.user.id
             });
 
             tg.sendData(data);
